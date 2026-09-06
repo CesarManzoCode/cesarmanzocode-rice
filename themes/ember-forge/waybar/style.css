@@ -1,0 +1,127 @@
+/* ember-forge — Waybar structure override: narrow left vertical dock.
+   Spacing/shape only. Colors come from colors.css (unchanged from the
+   first pass), imported below. Written for a tall, narrow window#waybar
+   (see config.jsonc: position=left, width=52) instead of the shared
+   config's wide, short one. */
+@import url("colors.css");
+
+* {
+  font-family: "JetBrainsMono Nerd Font", "Noto Sans", sans-serif;
+  font-size: 13px;
+  min-width: 0;
+}
+
+window#waybar {
+  background: transparent;
+}
+
+/* The dock plate itself: sharp/minimal rounding (matches geometry.rounding
+   = 3 in hypr.lua) and a clearly visible border, unlike monochrome's
+   softer 12px pill-shaped bar — this should read as a machined rail, not
+   a floating capsule. */
+#waybar {
+  background-color: @bar_bg;
+  border: 2px solid @bar_border;
+  border-radius: 4px;
+  color: @fg;
+  padding: 10px 0;
+}
+
+#custom-launcher {
+  font-size: 18px;
+  padding: 6px 0 10px;
+  color: @fg_strong;
+}
+
+#workspaces {
+  padding: 4px 0;
+  /* Waybar stacks a vertical bar's box children top-to-bottom
+     automatically; this just keeps the column, not a row. */
+  -gtk-icon-size: 16px;
+}
+
+#workspaces button {
+  padding: 6px 0;
+  margin: 2px 8px;
+  border-radius: 2px;
+  color: @muted;
+  background: transparent;
+  border: 1px solid transparent;
+}
+
+#workspaces button.empty,
+#workspaces button.persistent {
+  color: @subtle;
+}
+
+#workspaces button.visible {
+  color: @fg;
+}
+
+#workspaces button.active {
+  background-color: @fg_strong;
+  color: @bg;
+  border-radius: 2px;
+}
+
+#workspaces button.urgent {
+  color: @fg_strong;
+  border: 1px solid @fg_strong;
+}
+
+#workspaces button.workspace-hover {
+  background-color: @surface_alt;
+  color: @fg_strong;
+}
+
+/* Clock is stacked HH / MM via config.jsonc's "{:%H\n%M}" format — tight
+   line-height keeps the two lines close instead of drifting apart. */
+#clock {
+  font-weight: 700;
+  font-size: 12px;
+  line-height: 1.05;
+  color: @fg_strong;
+  padding: 8px 0;
+  border-top: 1px solid @bar_border;
+  border-bottom: 1px solid @bar_border;
+}
+
+#pulseaudio,
+#network,
+#custom-cliphist,
+#tray,
+#custom-notification,
+#custom-power {
+  padding: 8px 0;
+  color: @fg;
+}
+
+#custom-notification.dnd,
+#custom-notification.dnd-none,
+#custom-notification.dnd-notification {
+  color: @fg_strong;
+}
+
+#custom-power {
+  color: @fg_strong;
+  padding-bottom: 12px;
+}
+
+#tray > .passive {
+  opacity: 0.6;
+}
+
+#pulseaudio.muted {
+  color: @subtle;
+}
+
+#network.disconnected {
+  color: @subtle;
+}
+
+tooltip {
+  background-color: @bar_bg;
+  border: 1px solid @bar_border;
+  border-radius: 2px;
+  color: @fg;
+}
