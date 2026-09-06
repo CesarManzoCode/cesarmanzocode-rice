@@ -116,6 +116,9 @@ if [ "${WANT[hypr]:-0}" = "1" ]; then
       atomic_install_file "$REPO_ROOT/config/hypr/$f" "$RUNTIME_DIR/$f"
       manifest_add hypr "$RUNTIME_DIR/$f"
     done
+    atomic_install_file "$REPO_ROOT/config/hypr/screenshot.sh" "$RUNTIME_DIR/screenshot.sh"
+    chmod +x "$RUNTIME_DIR/screenshot.sh"
+    manifest_add hypr "$RUNTIME_DIR/screenshot.sh"
     atomic_install_file "$REPO_ROOT/themes/$THEME/hypr.lua" "$RUNTIME_DIR/theme.lua"
     manifest_add hypr "$RUNTIME_DIR/theme.lua"
     atomic_install_file "$REPO_ROOT/config/hypr/entrypoint.lua" "$ENTRYPOINT"

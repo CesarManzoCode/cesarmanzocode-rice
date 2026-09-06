@@ -127,15 +127,15 @@ hl.bind("XF86AudioPause",       hl.dsp.exec_cmd("playerctl play-pause"),        
 hl.bind("XF86AudioNext",        hl.dsp.exec_cmd("playerctl next"),                                 { locked = true, repeating = true })
 hl.bind("XF86AudioPrev",        hl.dsp.exec_cmd("playerctl previous"),                             { locked = true, repeating = true })
 
--- ---- Screenshots (grim + slurp; not user-customizable in v1) -----------
-
-local screenshot_dir = "$HOME/Pictures/Screenshots"
-hl.bind("Print", hl.dsp.exec_cmd(
-  "mkdir -p " .. screenshot_dir .. " && grim " .. screenshot_dir .. "/$(date +%Y-%m-%d_%H-%M-%S).png"
-))
-hl.bind("SUPER + Print", hl.dsp.exec_cmd(
-  "mkdir -p " .. screenshot_dir .. " && grim -g \"$(slurp)\" " .. screenshot_dir .. "/$(date +%Y-%m-%d_%H-%M-%S).png"
-))
+-- ---- Screenshots (grim + slurp via screenshot.sh; not user-customizable
+-- in v1) -------------------------------------------------------------------
+-- screenshot.sh is installed by apply.sh's "hypr" step into the same
+-- runtime dir as this file (~/.config/hypr/cesarmanzocode-rice/); it owns
+-- the save path, filename, and best-effort notify-send feedback so a
+-- silent grim save no longer looks like Print "did nothing".
+local SCREENSHOT_HELPER = "$HOME/.config/hypr/cesarmanzocode-rice/screenshot.sh"
+hl.bind("Print", hl.dsp.exec_cmd(SCREENSHOT_HELPER .. " full"))
+hl.bind("SUPER + Print", hl.dsp.exec_cmd(SCREENSHOT_HELPER .. " region"))
 
 -- ---- Clipboard picker (only wired up if cliphist is enabled) ------------
 
