@@ -1,0 +1,12 @@
+/* arctic-glass — Waybar palette (visual layer only).
+   bar_bg alpha kept low (0.62, well under monochrome's 0.8) so the real
+   layer blur (namespace ^waybar$, see config/hypr/layers.lua) reads
+   clearly as frosted glass rather than a near-opaque strip. */
+@define-color bar_bg alpha(#0d141c, 0.62);
+@define-color bar_border #2a3a46;
+@define-color bg #0a0f16;
+@define-color surface_alt #1a2530;
+@define-color fg #e8f0f5;
+@define-color fg_strong #ffffff;
+@define-color muted #8ca0af;
+@define-color subtle #3d4c58;

@@ -1,0 +1,33 @@
+{
+  "manifest_version": 3,
+  "name": "cesarmanzocode-rice — arctic-glass",
+  "version": "1.0.0",
+  "description": "Arctic-glass browser-chrome theme (frame/toolbar/omnibox/tabs only — no web-content theming) matching this rice's Waybar/Kitty/Rofi/SwayNC palette.",
+  "theme": {
+    "colors": {
+      "frame": [13, 20, 28],
+      "frame_inactive": [10, 15, 22],
+
+      "toolbar": [18, 27, 37],
+      "toolbar_text": [232, 240, 245],
+      "toolbar_button_icon": [232, 240, 245],
+      "button_background": [18, 27, 37],
+
+      "omnibox_background": [18, 27, 37],
+      "omnibox_text": [232, 240, 245],
+
+      "tab_text": [255, 255, 255],
+      "background_tab": [13, 20, 28],
+      "background_tab_inactive": [10, 15, 22],
+      "tab_background_text": [140, 160, 175],
+      "tab_background_text_inactive": [140, 160, 175],
+
+      "bookmark_text": [232, 240, 245],
+
+      "ntp_background": [10, 15, 22],
+      "ntp_header": [13, 20, 28],
+      "ntp_link": [127, 216, 232],
+      "ntp_text": [232, 240, 245]
+    }
+  }
+}

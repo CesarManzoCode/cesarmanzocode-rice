@@ -1,0 +1,19 @@
+/* arctic-glass — Rofi palette (visual layer only).
+   Alpha noticeably lower than monochrome's (D6/E8) so the compositor's own
+   layer blur (config/hypr/layers.lua, namespace ^rofi$) has real glass to
+   show through — a deep blue-black pane with genuine depth, not a flat
+   opaque box, while the search surface stays just distinct enough to find. */
+* {
+    background:         #0A0F16B8;
+    surface:            #121B25CC;
+    foreground:         #E8F0F5FF;
+    foreground-strong:  #FFFFFFFF;
+    muted:              #8CA0AFFF;
+    border:             #2A3A46FF;
+    /* Zebra striping only — deliberately lower alpha than @surface (which
+       stays reserved for the search bar, the one control that should read
+       as clearly distinct). A near-imperceptible stripe keeps the list
+       reading as one continuous glass surface with a single strong
+       element (the ice-blue selection), not a stack of separate cards. */
+    zebra:              #121B2580;
+}
