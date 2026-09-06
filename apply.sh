@@ -221,6 +221,15 @@ if [ "${WANT[waybar]:-0}" = "1" ]; then
   install_pair waybar "$REPO_ROOT/themes/$THEME/waybar/colors.css" "$XDG_CONFIG_HOME/waybar/colors.css"
   ok "waybar installed"
   rice_enable_service "waybar.service"
+  # Files copying cleanly doesn't mean Waybar can parse them — confirm the
+  # unit is still alive (skipped without a live systemd --user session, see
+  # rice_verify_service_health) instead of declaring success over a service
+  # that crash-looped on bad config.jsonc/style.css.
+  if rice_verify_service_health "waybar.service"; then
+    ok "waybar.service healthy"
+  else
+    die "waybar.service did not stay active after apply — see journal above"
+  fi
 fi
 
 # ---- rofi ------------------------------------------------------------

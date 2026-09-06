@@ -37,7 +37,6 @@ window#waybar {
   padding: 4px 0;
   /* Waybar stacks a vertical bar's box children top-to-bottom
      automatically; this just keeps the column, not a row. */
-  -gtk-icon-size: 16px;
 }
 
 #workspaces button {
@@ -74,12 +73,12 @@ window#waybar {
   color: @fg_strong;
 }
 
-/* Clock is stacked HH / MM via config.jsonc's "{:%H\n%M}" format — tight
-   line-height keeps the two lines close instead of drifting apart. */
+/* Clock is stacked HH / MM via config.jsonc's "{:%H\n%M}" format. GTK's
+   CSS engine (as used by Waybar) does not support the `line-height`
+   property, so line spacing here relies on font-size/padding alone. */
 #clock {
   font-weight: 700;
   font-size: 12px;
-  line-height: 1.05;
   color: @fg_strong;
   padding: 8px 0;
   border-top: 1px solid @bar_border;

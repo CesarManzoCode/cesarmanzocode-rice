@@ -104,11 +104,12 @@ window#waybar {
 /* Vertical-column clock: stacked HH / MM (see config.jsonc's "{:%H\n%M}"
    format) instead of a wide horizontal string — stays compact and
    legible at rail width. Sits as the rail's visual midpoint, echoing the
-   mockup's "clock, workspaces, status, actions" vertical stack. */
+   mockup's "clock, workspaces, status, actions" vertical stack. GTK's CSS
+   engine does not support `line-height`, so line spacing here relies on
+   font-size/padding alone. */
 #clock {
   font-weight: 600;
   font-size: 14px;
-  line-height: 1.25;
   color: @fg_strong;
   padding: 6px 0;
 }

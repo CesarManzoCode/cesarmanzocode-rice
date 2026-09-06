@@ -602,6 +602,55 @@ EOF
   rm -rf "$THOME"
 done
 
+echo "== waybar CSS: GTK/Waybar-incompatible properties must never reappear =="
+# Verified against a real Arch + Waybar 0.15.0 + Hyprland runtime: both of
+# these are silently rejected by Waybar's GTK CSS parser ("... is not a
+# valid property name" in the log), and on ember-forge/violet-night this
+# CSS error contributed to waybar.service crash-looping into
+# start-limit-hit. Not a universal CSS validator — just a targeted grep for
+# the two properties actually proven bad on real hardware.
+check_no_bad_css_prop() {
+  local prop="$1"
+  ! grep -rn "^\s*${prop}\s*:" \
+      --include="*.css" config/waybar themes/*/waybar 2>/dev/null
+}
+check "no -gtk-icon-size in any waybar style.css (rejected by Waybar 0.15.0's GTK CSS parser)" \
+  check_no_bad_css_prop "\-gtk-icon-size"
+check "no line-height in any waybar style.css (rejected by Waybar 0.15.0's GTK CSS parser)" \
+  check_no_bad_css_prop "line-height"
+
+echo "== service lifecycle: an enabled-but-dead unit is recovered, not skipped =="
+# Real-world sequence this guards against: a bad theme crashes an already
+# enabled waybar.service (crash-loop -> start-limit-hit), leaving it
+# inactive/failed; a later apply.sh with corrected config must actually try
+# to bring it back up, not silently no-op because it "isn't active".
+LIFECYCLE_BIN="$(mktemp -d)"
+LIFECYCLE_LOG="$(mktemp)"
+cat > "$LIFECYCLE_BIN/systemctl" <<EOF
+#!/usr/bin/env bash
+echo "\$*" >> "$LIFECYCLE_LOG"
+case "\$*" in
+  "--user list-unit-files fake.service --no-legend") echo "fake.service enabled" ;;
+  "--user is-enabled --quiet fake.service") exit 0 ;;
+  "--user reset-failed fake.service") exit 0 ;;
+  "--user restart fake.service") exit 0 ;;
+  *) exit 0 ;;
+esac
+EOF
+chmod +x "$LIFECYCLE_BIN/systemctl"
+check "rice_enable_service recovers an enabled-but-dead unit via restart, without checking is-active" bash -c '
+  set -euo pipefail
+  PATH="'"$LIFECYCLE_BIN"':$PATH"
+  export DRY_RUN=0
+  source "'"$REPO_ROOT"'/scripts/lib/common.sh"
+  rice_enable_service fake.service
+  grep -q -- "--user reset-failed fake.service" "'"$LIFECYCLE_LOG"'" &&
+  grep -q -- "--user restart fake.service" "'"$LIFECYCLE_LOG"'" &&
+  ! grep -q -- "--user is-active --quiet fake.service" "'"$LIFECYCLE_LOG"'"
+'
+rm -f "$LIFECYCLE_LOG"
+rm -rf "$LIFECYCLE_BIN"
+
 echo
 echo "passed: $PASS  failed: $FAIL"
 [ "$FAIL" -eq 0 ]

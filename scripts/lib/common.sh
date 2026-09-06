@@ -244,15 +244,44 @@ rice_enable_service() {
   fi
 }
 
-# rice_restart_service <unit> — best-effort reload of an already-running,
-# already-enabled unit. No-op if it isn't active (a fresh session will
-# start it via graphical-session.target on its own).
+# rice_restart_service <unit> — best-effort (re)start of an already-enabled
+# unit, used when re-applying config to a unit rice_enable_service finds is
+# already enabled. Must NOT gate on is-active: a unit left inactive/failed
+# by a *previous* bad config (or start-limit-hit from crash-looping on it)
+# is exactly the case a re-apply needs to recover, not skip. reset-failed
+# clears any start-limit-hit bookkeeping first so the restart below isn't
+# refused by systemd for a problem this new config already fixes.
 rice_restart_service() {
   local unit="$1"
   [ "$DRY_RUN" = "1" ] && return 0
   service_unit_exists "$unit" || return 0
-  systemctl --user is-active --quiet "$unit" 2>/dev/null || return 0
-  systemctl --user reload-or-restart "$unit" >/dev/null 2>&1 || true
+  systemctl --user reset-failed "$unit" >/dev/null 2>&1 || true
+  systemctl --user restart "$unit" >/dev/null 2>&1 || true
+}
+
+# rice_verify_service_health <unit> — best-effort post-(re)start check for a
+# unit whose config this apply just replaced. Only meaningful with a live
+# systemd --user manager (skipped the same way the hyprctl config check in
+# apply.sh is skipped without a live Hyprland session — a headless/test
+# environment has nothing real to verify, so this doesn't fake a result).
+# Gives the unit a brief moment to parse its new config/CSS, then confirms
+# it's still active — so a unit that crash-looped on bad config makes apply
+# fail loudly instead of printing "installed" over a dead service.
+rice_verify_service_health() {
+  local unit="$1"
+  [ "$DRY_RUN" = "1" ] && return 0
+  command -v systemctl >/dev/null 2>&1 || return 0
+  service_unit_exists "$unit" || return 0
+  # No live --user manager to check against — nothing to verify.
+  systemctl --user list-units >/dev/null 2>&1 || return 0
+
+  sleep 1
+  systemctl --user is-active --quiet "$unit" && return 0
+
+  err "$unit is not active after apply — likely a config/CSS error"
+  systemctl --user status --no-pager -l "$unit" 2>&1 | sed 's/^/    /' >&2 || true
+  command -v journalctl >/dev/null 2>&1 && journalctl --user -u "$unit" -n 20 --no-pager 2>&1 | sed 's/^/    /' >&2
+  return 1
 }
 
 # rice_disable_service_if_owned <unit> — only disables a service THIS rice
