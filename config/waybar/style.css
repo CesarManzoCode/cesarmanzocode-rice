@@ -38,9 +38,27 @@ window#waybar {
   background: transparent;
 }
 
+/* Persistent/empty workspaces stay visible (this rice pins 5 of them) but
+   read as clearly inactive — same treatment either way, no color signal. */
+#workspaces button.empty,
+#workspaces button.persistent {
+  color: @subtle;
+}
+
+/* A workspace with windows on it but not focused. */
+#workspaces button.visible {
+  color: @fg;
+}
+
 #workspaces button.active {
   background-color: @fg_strong;
   color: @bg;
+}
+
+/* Urgent stays monochrome — a strong outline instead of red. */
+#workspaces button.urgent {
+  color: @fg_strong;
+  border: 1px solid @fg_strong;
 }
 
 #workspaces button.workspace-hover {
@@ -58,9 +76,18 @@ window#waybar {
 #network,
 #custom-cliphist,
 #tray,
+#custom-notification,
 #custom-power {
   padding: 0 10px;
   color: @fg;
+}
+
+/* DND is distinguished by weight, not color — swaync-client -swb reports
+   it via the "dnd-*" alt/class values. */
+#custom-notification.dnd,
+#custom-notification.dnd-none,
+#custom-notification.dnd-notification {
+  color: @fg_strong;
 }
 
 #custom-power {
