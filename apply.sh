@@ -1,0 +1,205 @@
+#!/usr/bin/env bash
+#
+# apply.sh — (re)apply the rice from the current state of the repo.
+#
+# Usage:
+#   ./apply.sh                     apply everything from the last install.sh
+#   ./apply.sh monochrome          switch theme, keep the same components
+#   ./apply.sh monochrome waybar   apply just one component with that theme
+#
+# Never touches user apps/binds/local overrides — those live outside the
+# repo in ~/.config/cesarmanzocode-rice/ and are only written by install.sh.
+#
+set -euo pipefail
+
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=scripts/lib/common.sh
+source "$REPO_ROOT/scripts/lib/common.sh"
+
+NO_BACKUP=0
+POSITIONAL=()
+for arg in "$@"; do
+  case "$arg" in
+    --dry-run) DRY_RUN=1 ;;
+    --no-backup) NO_BACKUP=1 ;;
+    -h|--help)
+      cat <<'EOF'
+Usage: ./apply.sh [--dry-run] [--no-backup] [theme] [component ...]
+EOF
+      exit 0 ;;
+    *) POSITIONAL+=("$arg") ;;
+  esac
+done
+set -- "${POSITIONAL[@]+"${POSITIONAL[@]}"}"
+
+if [ -f "$STATE_FILE" ]; then
+  # shellcheck source=/dev/null
+  source "$STATE_FILE"
+elif [ "$#" -lt 2 ]; then
+  # No prior install.sh run to read theme/components from, and not enough
+  # was given on the command line to fully stand in for it (this is the
+  # path install.sh --dry-run takes, passing both explicitly).
+  die "No previous install found ($STATE_FILE missing). Run ./install.sh first."
+fi
+
+if [ "$#" -ge 1 ]; then
+  THEME="$1"
+  shift
+fi
+[ -d "$REPO_ROOT/themes/$THEME" ] || die "Unknown theme: $THEME"
+
+FILTER=("$@")
+declare -A WANT=()
+for c in ${SELECTED_COMPONENTS:-}; do WANT[$c]=1; done
+if [ "${#FILTER[@]}" -gt 0 ]; then
+  declare -A ONLY=()
+  for c in "${FILTER[@]}"; do ONLY[$c]=1; done
+  for c in "${!WANT[@]}"; do
+    [ "${ONLY[$c]:-0}" = "1" ] || WANT[$c]=0
+  done
+fi
+
+info "Applying theme '$THEME'"
+
+STAMP="$(date +%Y%m%d-%H%M%S)-apply"
+BACKUP_DIR="$BACKUP_ROOT/$STAMP"
+
+maybe_backup() {
+  [ "$NO_BACKUP" = "1" ] && return 0
+  backup_path "$1" "$BACKUP_DIR"
+}
+
+install_pair() {
+  # install_pair <component> <src> <dst>
+  local component="$1" src="$2" dst="$3"
+  maybe_backup "$dst"
+  copy_file "$src" "$dst"
+  manifest_add "$component" "$dst"
+}
+
+# ---- hypr ------------------------------------------------------------
+
+if [ "${WANT[hypr]:-0}" = "1" ]; then
+  info "hypr"
+  command -v lua >/dev/null 2>&1 || die "The 'lua' interpreter is required to generate hyprland.conf (pacman -S lua)."
+  ensure_dir "$XDG_CONFIG_HOME/hypr"
+  manifest_reset hypr
+  DST="$XDG_CONFIG_HOME/hypr/hyprland.conf"
+  maybe_backup "$DST"
+  LOCAL_ARG=""
+  [ -f "$LOCAL_LUA" ] && LOCAL_ARG="$LOCAL_LUA"
+  if [ "$DRY_RUN" = "1" ]; then
+    log "[dry-run] generate $DST"
+  else
+    lua "$REPO_ROOT/scripts/generate-hyprland-conf.lua" \
+      "$REPO_ROOT" "$REPO_ROOT/themes/$THEME/hypr.lua" "$USER_LUA" "$LOCAL_ARG" > "$DST"
+  fi
+  manifest_add hypr "$DST"
+  ok "hyprland.conf generated"
+fi
+
+# ---- wallpaper asset (shared by hyprlock + hyprpaper) ---------------------
+
+WALLPAPER_DST="$XDG_CONFIG_HOME/hypr/wallpapers/${THEME}.png"
+
+ensure_wallpaper_asset() {
+  local component="$1"
+  install_pair "$component" "$REPO_ROOT/wallpapers/${THEME}.png" "$WALLPAPER_DST"
+}
+
+# ---- hyprlock ----------------------------------------------------------
+
+if [ "${WANT[hyprlock]:-0}" = "1" ]; then
+  info "hyprlock"
+  manifest_reset hyprlock
+  ensure_wallpaper_asset hyprlock
+  DST="$XDG_CONFIG_HOME/hypr/hyprlock.conf"
+  maybe_backup "$DST"
+  render_template "$REPO_ROOT/themes/$THEME/hyprlock.conf" "$DST" "@WALLPAPER@" "$WALLPAPER_DST"
+  manifest_add hyprlock "$DST"
+  ok "hyprlock.conf installed"
+fi
+
+# ---- hypridle ------------------------------------------------------------
+
+if [ "${WANT[hypridle]:-0}" = "1" ]; then
+  info "hypridle"
+  manifest_reset hypridle
+  DST="$XDG_CONFIG_HOME/hypr/hypridle.conf"
+  install_pair hypridle "$REPO_ROOT/config/hypridle/hypridle.conf.template" "$DST"
+  ok "hypridle.conf installed"
+fi
+
+# ---- wallpaper / hyprpaper ------------------------------------------------
+
+if [ "${WANT[wallpaper]:-0}" = "1" ]; then
+  info "wallpaper"
+  manifest_reset wallpaper
+  ensure_wallpaper_asset wallpaper
+  DST="$XDG_CONFIG_HOME/hypr/hyprpaper.conf"
+  maybe_backup "$DST"
+  render_template "$REPO_ROOT/config/hyprpaper/hyprpaper.conf.template" "$DST" "@WALLPAPER@" "$WALLPAPER_DST"
+  manifest_add wallpaper "$DST"
+  ok "wallpaper installed"
+fi
+
+# ---- waybar ----------------------------------------------------------
+
+if [ "${WANT[waybar]:-0}" = "1" ]; then
+  info "waybar"
+  manifest_reset waybar
+  install_pair waybar "$REPO_ROOT/config/waybar/config.jsonc" "$XDG_CONFIG_HOME/waybar/config.jsonc"
+  install_pair waybar "$REPO_ROOT/config/waybar/style.css" "$XDG_CONFIG_HOME/waybar/style.css"
+  install_pair waybar "$REPO_ROOT/themes/$THEME/waybar/colors.css" "$XDG_CONFIG_HOME/waybar/colors.css"
+  ok "waybar installed"
+fi
+
+# ---- rofi ------------------------------------------------------------
+
+if [ "${WANT[rofi]:-0}" = "1" ]; then
+  info "rofi"
+  manifest_reset rofi
+  install_pair rofi "$REPO_ROOT/config/rofi/config.rasi" "$XDG_CONFIG_HOME/rofi/config.rasi"
+  install_pair rofi "$REPO_ROOT/themes/$THEME/rofi/colors.rasi" "$XDG_CONFIG_HOME/rofi/colors.rasi"
+  install_pair rofi "$REPO_ROOT/config/rofi/power-menu.sh" "$XDG_CONFIG_HOME/rofi/power-menu.sh"
+  [ "$DRY_RUN" = "1" ] || chmod +x "$XDG_CONFIG_HOME/rofi/power-menu.sh"
+  ok "rofi installed"
+fi
+
+# ---- swaync ----------------------------------------------------------
+
+if [ "${WANT[swaync]:-0}" = "1" ]; then
+  info "swaync"
+  manifest_reset swaync
+  install_pair swaync "$REPO_ROOT/config/swaync/config.json" "$XDG_CONFIG_HOME/swaync/config.json"
+  install_pair swaync "$REPO_ROOT/config/swaync/style.css" "$XDG_CONFIG_HOME/swaync/style.css"
+  install_pair swaync "$REPO_ROOT/themes/$THEME/swaync/colors.css" "$XDG_CONFIG_HOME/swaync/colors.css"
+  ok "swaync installed"
+fi
+
+# ---- kitty -----------------------------------------------------------
+
+if [ "${WANT[kitty]:-0}" = "1" ]; then
+  info "kitty"
+  manifest_reset kitty
+  install_pair kitty "$REPO_ROOT/config/kitty/kitty.conf" "$XDG_CONFIG_HOME/kitty/kitty.conf"
+  install_pair kitty "$REPO_ROOT/themes/$THEME/kitty/colors.conf" "$XDG_CONFIG_HOME/kitty/colors.conf"
+  ok "kitty installed"
+fi
+
+# ---- best-effort live reload -------------------------------------------
+
+if [ "$DRY_RUN" = "0" ] && command -v hyprctl >/dev/null 2>&1; then
+  hyprctl reload >/dev/null 2>&1 || true
+  if [ "${WANT[waybar]:-0}" = "1" ] && command -v waybar >/dev/null 2>&1; then
+    pkill -x waybar >/dev/null 2>&1 || true
+    setsid -f waybar >/dev/null 2>&1 || true
+  fi
+  if [ "${WANT[swaync]:-0}" = "1" ] && command -v swaync >/dev/null 2>&1; then
+    pkill -x swaync >/dev/null 2>&1 || true
+    setsid -f swaync >/dev/null 2>&1 || true
+  fi
+fi
+
+echo
+ok "apply.sh finished (theme: $THEME)"

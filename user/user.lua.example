@@ -1,0 +1,66 @@
+--[[
+  user.lua.example — schema for ~/.config/cesarmanzocode-rice/user.lua
+
+  install.sh writes the real file for you interactively (or from
+  --defaults). This example exists so the schema is documented and so you
+  can hand-edit your own copy without re-running the installer.
+
+  IMPORTANT: the real user.lua lives outside the repo, under your XDG
+  config home, and is never committed. It survives `git pull` and
+  `./apply.sh`.
+
+  Bind fields accept a table { mods = "SUPER SHIFT", key = "S" } — this is
+  the normalized form of the human syntax "SUPER+SHIFT+S" that install.sh
+  parses for you. Any bind you omit falls back to the built-in default in
+  config/hypr/binds.lua.
+
+  Set any app to "none" to disable it: no bind is generated, nothing is
+  assumed to be installed, and no autostart entry is added for it.
+]]
+
+return {
+  -- Which optional components this machine has installed. autostart.lua
+  -- and the per-app packaging in install.sh both read this.
+  components = {
+    hypr      = true,
+    waybar    = true,
+    rofi      = true,
+    swaync    = true,
+    kitty     = true,
+    hyprlock  = true,
+    hypridle  = true,
+    hyprpaper = true,
+    polkit    = true,
+    cliphist  = true,
+  },
+
+  -- Default applications. Any value can be "none".
+  apps = {
+    terminal    = "kitty",
+    browser     = "brave",
+    filemanager = "dolphin",
+    launcher    = "rofi -show drun",
+  },
+
+  -- Keybinds. Table form is { mods = "SUPER", key = "T" }.
+  binds = {
+    terminal         = { mods = "SUPER", key = "T" },
+    close_window     = { mods = "SUPER", key = "X" },
+    browser          = { mods = "SUPER", key = "B" },
+    filemanager      = { mods = "SUPER", key = "E" },
+    launcher         = { mods = "SUPER", key = "R" },
+    toggle_floating  = { mods = "SUPER", key = "V" },
+    special_toggle   = { mods = "SUPER", key = "S" },
+    special_move     = { mods = "SUPER SHIFT", key = "S" },
+    clipboard        = { mods = "SUPER", key = "period" },
+
+    -- Advanced (optional). Uncomment to customize; otherwise these
+    -- defaults apply.
+    -- focus_left  = { mods = "SUPER", key = "left" },
+    -- focus_right = { mods = "SUPER", key = "right" },
+    -- focus_up    = { mods = "SUPER", key = "up" },
+    -- focus_down  = { mods = "SUPER", key = "down" },
+    -- workspace_prefix      = "SUPER",
+    -- move_workspace_prefix = "SUPER SHIFT",
+  },
+}
