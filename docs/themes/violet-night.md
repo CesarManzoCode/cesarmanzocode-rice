@@ -110,6 +110,189 @@ than (special-workspace) monochrome's own `specialWorkspaceSpring`
 | layer | 330 | 31 | ~0.85 | ~0.91 |
 | special_workspace | 250 | 24 | ~0.76 | ~0.73 |
 
+## Structure (v2 — structural pass)
+
+Per the approved 4-panel mockup, violet-night's quadrant is: an immersive
+main area (floating UI cards, secondary cards lower in the frame) to the
+left of a **RIGHT VERTICAL PANEL/RAIL** — a clock, workspace indicators,
+status icons, and action items stacked top-to-bottom. This is the single
+most important structural fact of this pass: violet-night does **not**
+use a horizontal top bar.
+
+### Waybar: right vertical rail
+
+Two new override files, installed in place of the shared
+`config/waybar/{config.jsonc,style.css}` via `apply.sh`'s
+`theme_file_or_shared`:
+
+- `themes/violet-night/waybar/config.jsonc`
+- `themes/violet-night/waybar/style.css`
+
+Structure:
+
+```jsonc
+{
+  "layer": "top",
+  "position": "right",
+  "orientation": "vertical",
+  "width": 64,
+  "margin-top": 20, "margin-bottom": 20, "margin-right": 16, "margin-left": 0,
+  "spacing": 10,
+  "modules": [
+    "custom/launcher", "hyprland/workspaces", "clock",
+    "pulseaudio", "network", "custom/cliphist", "tray",
+    "custom/notification", "custom/power"
+  ]
+}
+```
+
+Every module, its `on-click`/`on-scroll`/`exec` command, and its function
+is identical to the shared horizontal config — this is purely a layout
+reorientation (`modules-left`/`modules-center`/`modules-right` collapsed
+into one ordered vertical `modules` column) plus, where a module's text
+would not fit a 64px-wide column, a more compact **display format** for
+that module (e.g. `pulseaudio`/`network` show icon-only instead of
+`icon + NN%` text, with the percentage/detail moved into the tooltip;
+`clock` shows a stacked `HH\nMM` instead of `HH:MM · Day DD Mon`, with the
+full date/calendar in its tooltip). No binding, command, or capability
+was removed — only how much text renders inline on a narrow rail changed.
+
+Grouping mirrors the shared bar's original intent read top-to-bottom
+instead of left-to-right: launcher + workspaces at the top (navigation),
+clock in the visual middle (the one "anchor" element, matching the
+mockup's "clock, workspaces, status, actions" description), then
+status/action modules (audio, network, clipboard, tray, notifications,
+power) stacked toward the bottom — the same grouping the shared
+`modules-right` array already expressed, just read downward.
+
+`style.css` gives the rail violet-night's own **spacious/premium/
+atmospheric** character rather than a recolor of ember-forge's dense
+industrial dock:
+
+- 20px outer padding and 10px margin between every module (vs. a tight
+  industrial dock's few-px gaps) — deliberately more breathing room.
+- `border-radius: 20px` on the rail itself and 12px on each workspace
+  pill, matching this theme's higher `geometry.rounding` (14, vs.
+  monochrome's 9) — soft/rounded, not square/industrial.
+- Workspace buttons are 34x34px generous rounded squares (bigger touch
+  targets than a dense dock's ticks), with the active workspace getting a
+  soft `box-shadow` violet glow (`alpha(@accent, 0.45)`) instead of a
+  hard flat fill — consistent with the theme's expressive
+  `blur_vibrancy`/`blur_size` geometry rather than a flat industrial
+  highlight.
+- The clock's stacked vertical format keeps it legible in the column
+  without shrinking type illegibly small.
+
+### `hypr.lua` layers override
+
+```lua
+layers = {
+  waybar = { animation = "slide right" },
+},
+```
+
+Matches the rail entering from its true edge (right) instead of the
+shared default's "slide top". Rofi stays on its v1-default `popin 96%`
+(it's still centered — see below) and SwayNC keeps its v1-default
+`slide right` (it already travels from the right edge; only its margin
+changed, not its direction — see below), so neither needed an override.
+
+### SwayNC: non-overlap reasoning
+
+New `themes/violet-night/swaync/{config.json,style.css}`. The rail
+occupies a real footprint on the right edge: `width: 64` + `border: 1px`
+on each side + `margin-right: 16` = **~82px** of screen-right real
+estate, spanning almost the full screen height (`margin-top`/
+`margin-bottom: 20` each). SwayNC's shared default already docks
+`positionX: "right"` with `control-center-margin-right: 14` — left as-is,
+that 14px margin would sit the control-center's right edge well inside
+the rail's ~82px footprint, i.e. a direct overlap.
+
+**Solution chosen**: keep `positionX: "right"` (this panel is opened from
+a notification-bell module that itself lives on the right rail, so
+having it surface just to that rail's left keeps the interaction spatially
+coherent — click a right-edge icon, get a right-edge-adjacent panel, not
+one that jumps across the screen) but **increase
+`control-center-margin-right` from 14 to 100** — enough to clear the
+rail's ~82px footprint plus an ~18px visual gap, so the panel's card and
+the rail's glass column never touch or overlap at any screen height.
+`positionY`/`control-center-margin-top` are unchanged (8px) since the
+rail's vertical footprint, not its position on the Y axis, was the actual
+conflict — the fix only needed to happen on the X axis.
+
+An alternative considered and rejected: repositioning to
+`positionX: "left"`. That would trivially avoid the rail but breaks the
+spatial link between the rail's notification icon and where the panel
+appears, and would put the control-center on the same side as the
+mockup's "immersive main area" — competing with the floating UI cards
+that area is supposed to read as, rather than staying a right-edge
+system surface the way the rest of the rail-adjacent theme composition
+does.
+
+`style.css` gives the panel/cards deeper rounding (20px panel, 16px
+notification cards, up from the shared 14/11px) and a soft
+violet-tinted `box-shadow` glow on floating popups
+(`rgba(169, 112, 255, 0.08)`) consistent with `blur_vibrancy` elsewhere
+in the theme — "dramatic but never illegible": text colors/contrast are
+untouched, only the container depth/glow changed.
+
+### Rofi: cinematic launcher (unchanged position, new composition)
+
+New `themes/violet-night/rofi/config.rasi`. Per the brief this is meant
+to be the theme's strongest identity piece. It stays `location: center;
+anchor: center;` — a right rail is a persistent shell edge, not something
+a full-screen transient overlay like Rofi needs to dodge, so centering it
+does not conflict with the mockup — but is deliberately **not** a
+recolor of the shared/monochrome launcher:
+
+- `width: 620px` (vs. shared 520px) and `padding: 26px`/`border-radius:
+  22px` (vs. 18px/14px) — larger and more cinematic, reads as a floating
+  console rather than a compact popup.
+- A new `divider` widget between the search bar and the results list —
+  an elegant hairline seam (`@border` color, 16px margin) that no other
+  theme's Rofi has; echoes the theme's layered-glass language as a visual
+  seam between two glass panes rather than a bare gap.
+- The selected row fills with the theme's `@accent` violet
+  (`background-color: @accent`) instead of monochrome's inverted
+  white-on-black — the single biggest identity marker, visible even in
+  grayscale as a mid-tone fill rather than a hard black/white flip.
+- Placeholder text ("Search the night…") and a violet `@accent` prompt
+  glyph reinforce the mood without adding any new color.
+
+No `layers.lua` override was needed for Rofi since it did not change
+anchor/edge, only size/internal composition.
+
+### Hyprlock: off-center cinematic composition
+
+`themes/violet-night/hyprlock.conf` was rewritten from what had been an
+exact position-for-position relabel of monochrome's centered layout. The
+new composition anchors the clock/date/input-field block to the
+**lower-left third** of the screen (`halign = left`, `position` offset
+`-260` on the X axis) instead of dead-center — reads as a film title
+card sitting in a quiet corner of the frame rather than monochrome's
+centered utilitarian stack. Type treatment also differs: the date line
+is now all-caps with a mid-dot separator
+(`%A · %d %B` piped through `tr` to uppercase) in the theme's `@accent`
+violet, instead of monochrome's plain sentence-case gray line. The same
+three-block shape (`background`, two `label`s, one `input-field`) and the
+`@WALLPAPER@` placeholder are unchanged, as required.
+
+### Ember-forge comparison (differentiation)
+
+Both violet-night's right rail and ember-forge's left dock (ember-forge's
+own structural pass, tracked separately) are the same structural idea —
+Waybar as a `position: left|right`, `orientation: vertical` dock instead
+of a horizontal top bar — placed as **mirror images** of each other. The
+difference between them is deliberately in *character*, not mechanism:
+
+| | ember-forge (left dock) | violet-night (right rail) |
+|---|---|---|
+| Edge | left | right |
+| Density | tight, industrial (small gaps, square-ish shapes) | spacious, atmospheric (generous gaps, softly rounded) |
+| Rounding | matches ember's lower `rounding` | matches violet-night's higher `rounding` (14) |
+| Active-workspace treatment | flat/hard highlight | soft violet glow (`box-shadow`) consistent with `blur_vibrancy` |
+| Mood | industrial/utilitarian | premium/cinematic/nocturnal |
+
 ## Manual verification (real hardware only)
 
 This environment has no Hyprland/Wayland session, no `lua` interpreter,
@@ -130,16 +313,32 @@ hyprctl configerrors     # expect: clean
 - **Motion**: window open/workspace switch/special-workspace toggle
   should all feel a touch livelier than monochrome — still no visible
   bounce/wobble, just slightly less "snapped to rest".
-- **Waybar**: confirm the bar reads as dark nocturnal glass (its layer
-  blur showing through at ~0.72 alpha), with the violet accent limited
-  to small highlights (active workspace, etc.), not the whole bar.
+- **Waybar (right vertical rail — required, not optional)**: confirm
+  Waybar actually renders as a tall narrow column pinned to the right
+  edge — `position: right`, `orientation: vertical` — NOT a horizontal
+  top bar. Confirm every module (launcher, workspaces, clock, pulseaudio,
+  network, cliphist, tray, notification, power) is present and clickable/
+  scrollable exactly as before, just stacked top-to-bottom, with the
+  rail reading as dark nocturnal glass (~0.72 alpha) and generous spacing
+  between modules (not ember-forge's tight dock look). **This could not
+  be verified at all in this environment — no Waybar binary, no
+  compositor — it is a required manual runtime check.**
 - **Rofi** (`SUPER+R`): this is meant to be the strongest identity
-  piece — confirm it looks distinctly "violet-night" (deep, layered,
-  a clear accent on the selected row) while the list stays as legible
-  as monochrome's.
-- **SwayNC**: confirm the control center feels more dramatic than
-  monochrome's (translucent, layered) without losing readability of
-  notification text.
+  piece — confirm it looks distinctly "violet-night" (larger, deeper,
+  layered, a visible divider between search and results, a clear
+  `@accent`-filled selected row) while the list stays as legible as
+  monochrome's, and that it still opens centered.
+- **SwayNC**: click the rail's notification icon and confirm the control
+  center opens just clear of the rail — its right edge should have a
+  visible gap before the rail's left edge, at every scroll position/
+  notification count, never overlapping or touching it. Confirm it also
+  feels more dramatic than monochrome's (translucent, layered, soft glow
+  on popups) without losing readability of notification text. **The
+  actual non-overlap at runtime (real SwayNC/Waybar geometry, real
+  monitor width/scale) could not be verified in this environment — it is
+  a required manual runtime check; the `control-center-margin-right: 100`
+  value is a static calculation from the rail's configured width/margins,
+  not a measured/rendered result.**
 - **Kitty**: confirm the transparent dark-violet background looks good
   behind real terminal content and that foreground/selection colors
   stay legible at typical `background_opacity` settings.
@@ -150,9 +349,10 @@ hyprctl configerrors     # expect: clean
   variants too (`monolith`, `drift`, `halo`) — copy one over
   `wallpapers/violet-night.png`, re-run `apply.sh`, no need to
   regenerate anything.
-- **Hyprlock**: confirm the lock screen's blur/labels/input-field read
-  clearly as this theme (violet outer/check colors) and stay legible
-  over the wallpaper's default glow placement.
+- **Hyprlock**: confirm the lock screen's off-center lower-left block
+  (clock/date/input) reads clearly as this theme (violet outer/check
+  colors, all-caps accented date line) and stays legible over the
+  wallpaper's default glow placement — the block is no longer centered.
 - **Brave**: load `themes/violet-night/brave/manifest.json` as an
   unpacked theme extension and confirm frame/toolbar/omnibox/tabs/NTP
   match the deep violet/blue-black palette, with `ntp_link` as the one

@@ -1,0 +1,142 @@
+/* violet-night — Rofi structure override.
+   Per the brief this is meant to be the theme's strongest identity
+   piece: not a recolor of the shared centered launcher, but its own
+   deeper, more cinematic composition — larger, more internal spacing,
+   a visible divider between the search field and results, and softer/
+   rounder shapes matching this theme's higher rounding+blur. Still
+   centered (a right rail doesn't conflict with a centered launcher —
+   the mockup's rail only governs the persistent shell edge, not a
+   transient overlay that already covers the whole screen while open),
+   so no layers.lua animation override is needed here. Colors from the
+   active theme's colors.rasi. */
+@import "colors.rasi"
+
+configuration {
+    modi:                       "drun,run";
+    show-icons:                 true;
+    display-drun:               "Apps";
+    drun-display-format:        "{name}";
+    font:                       "JetBrainsMono Nerd Font 12";
+}
+
+window {
+    /* Noticeably larger and taller than the shared 520px/18px-padding
+       launcher — more cinematic, more like a floating console than a
+       compact popup. */
+    width:                      620px;
+    location:                   center;
+    anchor:                     center;
+    padding:                    26px;
+    border:                     2px;
+    border-radius:              22px;
+    background-color:           @background;
+    border-color:               @border;
+}
+
+mainbox {
+    children:                   [ "inputbar", "divider", "listview" ];
+    spacing:                    0px;
+    background-color:           transparent;
+}
+
+inputbar {
+    padding:                    14px 16px;
+    border-radius:              14px;
+    background-color:           @surface;
+    text-color:                 @foreground;
+    children:                   [ "prompt", "entry" ];
+}
+
+prompt {
+    text-color:                 @accent;
+    padding:                    0 10px 0 0;
+}
+
+entry {
+    placeholder:                "Search the night…";
+    placeholder-color:          @muted;
+    text-color:                 @foreground;
+}
+
+/* An elegant hairline divider between search and results — a small
+   detail that reads as deliberate composition rather than a shared
+   template, and echoes the layered/blur language elsewhere in the
+   theme (a faint seam between glass panes, not a hard rule). */
+divider {
+    background-color:           @border;
+    expand:                     false;
+    orientation:                horizontal;
+    margin:                     16px 6px;
+}
+
+listview {
+    lines:                      8;
+    spacing:                    5px;
+    fixed-height:               false;
+    scrollbar:                  false;
+    border:                     0;
+}
+
+/* ---- element states (same 6-combo + 3-selected model documented in the
+   shared config.rasi) — restyled deeper/rounder/moodier for this theme,
+   never introducing new color beyond the theme's own @accent. */
+
+element {
+    padding:                    12px 14px;
+    border-radius:              12px;
+    text-color:                 @foreground;
+}
+
+element normal.normal {
+    background-color:           transparent;
+    text-color:                 @foreground;
+}
+
+element alternate.normal {
+    background-color:           @zebra;
+    text-color:                 @foreground;
+}
+
+element normal.active {
+    background-color:           transparent;
+    text-color:                 @foreground-strong;
+}
+
+element alternate.active {
+    background-color:           @zebra;
+    text-color:                 @foreground-strong;
+}
+
+element normal.urgent {
+    background-color:           transparent;
+    text-color:                 @foreground-strong;
+}
+
+element alternate.urgent {
+    background-color:           @zebra;
+    text-color:                 @foreground-strong;
+}
+
+/* The one deliberately loud element on screen: the theme's contained
+   violet accent fills the selected row, instead of monochrome's
+   inverted white-on-black — this is the single biggest identity marker
+   that distinguishes violet-night's launcher from every other theme's
+   at a glance, even in grayscale (a mid-tone fill vs. a hard black/white
+   flip reads differently in density even without color). */
+element selected.normal,
+element selected.active,
+element selected.urgent {
+    background-color:           @accent;
+    text-color:                 @background;
+}
+
+element-text {
+    background-color:           inherit;
+    text-color:                 inherit;
+    vertical-align:             0.5;
+}
+
+element-icon {
+    size:                       22px;
+    padding:                    0 12px 0 0;
+}

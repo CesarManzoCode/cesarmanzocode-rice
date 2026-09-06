@@ -1,0 +1,128 @@
+/* violet-night — SwayNC structure override: shape/layout only, tuned
+   for this theme's atmospheric/cinematic language and its rail's
+   non-overlap margin (see config.json's control-center-margin-right).
+   Colors from colors.css. */
+@import url("colors.css");
+
+* {
+  font-family: "JetBrainsMono Nerd Font", "Noto Sans", sans-serif;
+  font-size: 13px;
+}
+
+/* Deeper, softer-cornered card than the shared default (14px -> 20px,
+   matching this theme's geometry.rounding=14 plus a touch more since
+   this panel is the biggest single surface on screen) — reads as one
+   more floating glass layer, consistent with the rest of the theme,
+   never a flat control panel bolted on top. */
+.control-center {
+  background-color: @bg;
+  border: 1px solid @border;
+  border-radius: 20px;
+  color: @fg;
+  padding: 10px;
+}
+
+.control-center-list-placeholder image {
+  transform: scale(0.4);
+  margin: -24px 0;
+}
+
+.notification-row {
+  padding: 8px 4px;
+}
+
+/* Depth comes from a lighter surface + a fine border + a faint glow, not
+   flat color — each card should feel like it is genuinely floating a
+   level above the translucent panel behind it (itself floating above
+   the blurred wallpaper), never illegible: text contrast is unaffected
+   by any of the glow/shadow work below. */
+.notification-background,
+.floating-notifications .notification-background {
+  background: @surface;
+  border: 1px solid @border;
+  border-radius: 16px;
+  color: @fg;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+}
+
+.floating-notifications .notification-background {
+  /* Popups sit on bare desktop (no panel behind them), so they get a
+     touch more surface contrast plus a soft violet-tinted glow that
+     reads as "arriving from the same nocturnal system" as the rail. */
+  background: @surface_alt;
+  box-shadow: 0 6px 28px rgba(0, 0, 0, 0.45), 0 0 20px rgba(169, 112, 255, 0.08);
+}
+
+.notification-content {
+  padding: 12px 14px;
+}
+
+.summary {
+  color: @fg_strong;
+  font-weight: 600;
+}
+
+.body {
+  color: @muted;
+}
+
+.time {
+  color: @subtle;
+  font-size: 0.9em;
+}
+
+.widget-title {
+  color: @fg_strong;
+  padding: 12px 16px 8px;
+  font-weight: 600;
+}
+
+.widget-title button {
+  background: @surface_alt;
+  color: @fg;
+  border-radius: 10px;
+  transition: background-color 150ms ease-out, color 150ms ease-out;
+}
+
+.widget-title button:hover {
+  background: @accent;
+  color: @bg;
+}
+
+.widget-dnd {
+  padding: 4px 16px 12px;
+}
+
+.widget-dnd > switch {
+  background: @surface_alt;
+  border-radius: 12px;
+  transition: background-color 150ms ease-out;
+}
+
+.widget-dnd > switch:checked {
+  background: @accent;
+}
+
+.close-button {
+  background: @surface_alt;
+  color: @fg;
+  border-radius: 10px;
+  transition: background-color 150ms ease-out, color 150ms ease-out;
+}
+
+.close-button:hover {
+  background: @accent;
+  color: @bg;
+}
+
+.notification-action {
+  background: @surface_alt;
+  color: @fg;
+  border-radius: 10px;
+  transition: background-color 150ms ease-out, color 150ms ease-out;
+}
+
+.notification-action:hover {
+  background: @accent;
+  color: @bg;
+}

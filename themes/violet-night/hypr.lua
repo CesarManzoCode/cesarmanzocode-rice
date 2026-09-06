@@ -90,4 +90,14 @@ return {
   },
 
   wallpaper = "wallpapers/violet-night.png",
+
+  -- Structural override (v2): Waybar is a RIGHT VERTICAL RAIL in this
+  -- theme, not the shared default's horizontal top bar — it enters from
+  -- the right edge instead of sliding down from the top. Rofi/SwayNC
+  -- keep their v1-default animation (Rofi stays centered; SwayNC's
+  -- placement moves — see swaync/config.json — but continues sliding
+  -- from the right, so no override is needed there).
+  layers = {
+    waybar = { animation = "slide right" },
+  },
 }
