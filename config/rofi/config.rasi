@@ -30,8 +30,8 @@ mainbox {
 }
 
 inputbar {
-    padding:                    11px 14px;
-    border-radius:              10px;
+    padding:                    12px 14px;
+    border-radius:              9px;
     background-color:           @surface;
     text-color:                 @foreground;
     children:                   [ "prompt", "entry" ];
@@ -50,7 +50,7 @@ entry {
 
 listview {
     lines:                      8;
-    spacing:                    5px;
+    spacing:                    3px;
     fixed-height:               false;
     scrollbar:                  false;
 }
@@ -70,20 +70,22 @@ listview {
    below; none of them introduce color. */
 
 element {
-    padding:                    9px 11px;
-    border-radius:              9px;
+    padding:                    10px 12px;
+    border-radius:              7px;
     text-color:                 @foreground;
 }
 
-/* Base rows: a near-imperceptible zebra (surface vs. transparent), same
-   foreground either way — reads as one coherent list, not two themes. */
+/* Base rows: a near-imperceptible zebra (zebra vs. transparent), same
+   foreground either way — reads as one continuous dark list, not a stack
+   of separate row-cards. @zebra is deliberately lower-contrast than
+   @surface (reserved for the search bar) — see colors.rasi. */
 element normal.normal {
     background-color:           transparent;
     text-color:                 @foreground;
 }
 
 element alternate.normal {
-    background-color:           @surface;
+    background-color:           @zebra;
     text-color:                 @foreground;
 }
 
@@ -95,7 +97,7 @@ element normal.active {
 }
 
 element alternate.active {
-    background-color:           @surface;
+    background-color:           @zebra;
     text-color:                 @foreground-strong;
 }
 
@@ -105,7 +107,7 @@ element normal.urgent {
 }
 
 element alternate.urgent {
-    background-color:           @surface;
+    background-color:           @zebra;
     text-color:                 @foreground-strong;
 }
 

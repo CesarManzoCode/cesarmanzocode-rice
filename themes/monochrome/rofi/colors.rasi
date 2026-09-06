@@ -1,9 +1,19 @@
-/* monochrome — Rofi palette (visual layer only) */
+/* monochrome — Rofi palette (visual layer only).
+   Alpha lowered from V2 (E6/F2) now that the compositor's own layer blur
+   (config/hypr/layers.lua, namespace ^rofi$) is real: the panel needs to
+   let a bit more through for that blur to actually read, while staying
+   unmistakably black, never a light/glassy pane. */
 * {
-    background:         #050505E6;
-    surface:            #101010F2;
+    background:         #050505D6;
+    surface:            #101010E8;
     foreground:         #F4F4F4FF;
     foreground-strong:  #FFFFFFFF;
     muted:              #9A9A9AFF;
     border:             #383838FF;
+    /* Zebra striping only — deliberately lower alpha than @surface (which
+       stays reserved for the search bar, the one control that should read
+       as clearly distinct). A near-imperceptible stripe keeps the list
+       reading as one continuous surface with a single strong element
+       (the white selection), not a stack of separate row-cards. */
+    zebra:              #10101099;
 }
