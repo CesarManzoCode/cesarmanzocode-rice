@@ -22,7 +22,11 @@ if c.swaync then
   hl.exec_once("swaync")
 end
 
-if c.hyprpaper then
+-- The public/installer-facing component name is "wallpaper" (see
+-- install.sh, apply.sh, user.lua.example); hyprpaper is just the binary
+-- it drives. Must match that key exactly, or the wallpaper daemon never
+-- autostarts even though everything else believes it's enabled.
+if c.wallpaper then
   hl.exec_once("hyprpaper")
 end
 
