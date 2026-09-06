@@ -1,0 +1,111 @@
+// ember-forge — Waybar structure override: LEFT VERTICAL DOCK.
+//
+// This is a genuine structural change from the shared config/waybar/
+// config.jsonc, not a re-skin: "position" is "left" (not "top"), the
+// primary dimension is "width" (not "height"), and Waybar's own
+// vertical-bar convention is followed for module grouping — on a
+// left/right bar, "modules-left" becomes the TOP group of the column,
+// "modules-center" the MIDDLE group, and "modules-right" the BOTTOM
+// group (Waybar stacks each group's modules top-to-bottom within it;
+// this is Waybar's documented behavior for non-"top"/"bottom"
+// positions, not a repurposing invented here). Every module below is
+// the same module, with the same on-click/exec commands, as the shared
+// horizontal config — only grouping/orientation/format changed to fit a
+// narrow column. See docs/themes/ember-forge.md "Structure" for the
+// full mapping back to the approved mockup.
+{
+  "layer": "top",
+  "position": "left",
+  "width": 52,
+  "margin-top": 14,
+  "margin-bottom": 14,
+  "margin-left": 8,
+  "spacing": 10,
+
+  // TOP of the column: launcher, then workspaces — the dock's "primary
+  // controls" group, same as the shared bar's leftmost group.
+  "modules-left": ["custom/launcher", "hyprland/workspaces"],
+  // MIDDLE of the column: clock, same module the shared bar centers.
+  "modules-center": ["clock"],
+  // BOTTOM of the column: status/utility/exit, same order and same
+  // commands as the shared bar's rightmost group.
+  "modules-right": ["pulseaudio", "network", "custom/cliphist", "tray", "custom/notification", "custom/power"],
+
+  "custom/launcher": {
+    "format": "󰣇",
+    "tooltip": false,
+    "on-click": "rofi -show drun"
+  },
+
+  "hyprland/workspaces": {
+    "format": "{id}",
+    "persistent-workspaces": { "*": 5 }
+  },
+
+  // Full "%H:%M · %a %d %b" doesn't fit a 52px column — stacked
+  // hour/minute keeps the clock legible without shrinking it into
+  // unreadable text; the full date moves to the tooltip (still one
+  // hover away, not dropped).
+  "clock": {
+    "format": "{:%H\n%M}",
+    "tooltip-format": "<big>{:%A, %d %B %Y}</big>\n<tt>{calendar}</tt>"
+  },
+
+  // Percentage/label text is dropped from the always-visible glyph (no
+  // room in 52px) and moved to the tooltip — same on-click/on-scroll
+  // commands as the shared bar, nothing functional changed.
+  "pulseaudio": {
+    "format": "{icon}",
+    "format-muted": "",
+    "format-icons": { "default": ["", "", ""] },
+    "tooltip-format": "{volume}%",
+    "on-click": "pactl set-sink-mute @DEFAULT_SINK@ toggle",
+    "on-scroll-up": "wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 2%+",
+    "on-scroll-down": "wpctl set-volume @DEFAULT_AUDIO_SINK@ 2%-"
+  },
+
+  "network": {
+    "format-wifi": "",
+    "format-ethernet": "󰈀",
+    "format-disconnected": "󰤭",
+    "format-linked": "󰈀",
+    "tooltip-format-wifi": "{essid}  ·  {signalStrength}%\n{ifname}: {ipaddr}/{cidr}",
+    "tooltip-format-ethernet": "{ifname}: {ipaddr}/{cidr}",
+    "tooltip-format-disconnected": "Disconnected"
+  },
+
+  "custom/cliphist": {
+    "format": "",
+    "tooltip-text": "Clipboard history",
+    "on-click": "cliphist list | rofi -dmenu | cliphist decode | wl-copy"
+  },
+
+  "tray": {
+    "icon-size": 16,
+    "spacing": 8
+  },
+
+  // Same best-effort convention as the shared config: no-op if
+  // swaync-client is absent. See config/waybar/config.jsonc's comment.
+  "custom/notification": {
+    "exec": "swaync-client -swb",
+    "return-type": "json",
+    "format": "{icon}",
+    "format-icons": {
+      "notification": "󰂚",
+      "none": "󰂜",
+      "dnd-notification": "󰂛",
+      "dnd-none": "󰂛"
+    },
+    "on-click": "swaync-client -t -sw",
+    "on-click-right": "swaync-client -d -sw",
+    "escape": true,
+    "tooltip": true
+  },
+
+  "custom/power": {
+    "format": "⏻",
+    "tooltip": false,
+    "on-click": "~/.config/rofi/power-menu.sh"
+  }
+}

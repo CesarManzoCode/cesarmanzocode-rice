@@ -111,4 +111,18 @@ return {
   },
 
   wallpaper = "wallpapers/ember-forge.png",
+
+  -- Structural pass: Waybar is now a LEFT VERTICAL DOCK (see
+  -- themes/ember-forge/waybar/config.jsonc — position: "left") and Rofi
+  -- is anchored to the left edge near the dock (see
+  -- themes/ember-forge/rofi/config.rasi — location/anchor: west), not
+  -- the v1 defaults (waybar sliding from the top, Rofi centered popin).
+  -- SwayNC keeps the v1 default edge (docks top-right, slides from the
+  -- right) — only its card styling/margins/width changed, not its edge —
+  -- so it is deliberately omitted here and falls back to
+  -- config/hypr/layers.lua's default "slide right".
+  layers = {
+    waybar = { animation = "slide left" },
+    rofi   = { animation = "slide left" },
+  },
 }

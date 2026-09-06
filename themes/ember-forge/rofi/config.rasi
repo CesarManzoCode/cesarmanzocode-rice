@@ -1,0 +1,123 @@
+/* ember-forge — Rofi structure override.
+   Layout only. Colors from the active theme's colors.rasi (unchanged).
+
+   Structural choices vs. the shared config/rofi/config.rasi:
+   - anchored to the LEFT edge (location/anchor: west), near where the
+     dock lives, instead of dead-center — "the launcher lives near the
+     dock" reads as more consistent with a left-vertical-dock shell than
+     a centered popin would (see docs/themes/ember-forge.md "Structure").
+   - near-zero rounding (2px, matching hypr.lua geometry.rounding = 3) and
+     a visibly thicker border — more contundente/technical/angular than
+     arctic-glass's premium-glass centered launcher.
+   - tighter internal spacing/padding — dense, not airy. */
+@import "colors.rasi"
+
+configuration {
+    modi:                       "drun,run";
+    show-icons:                 true;
+    display-drun:               "Apps";
+    drun-display-format:        "{name}";
+    font:                       "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width:                      420px;
+    location:                   west;
+    anchor:                     west;
+    x-offset:                   24px;
+    padding:                    14px;
+    border:                     2px;
+    border-radius:              2px;
+    background-color:           @background;
+    border-color:               @border;
+}
+
+mainbox {
+    children:                   [ "inputbar", "listview" ];
+    spacing:                    10px;
+    background-color:           transparent;
+}
+
+inputbar {
+    padding:                    10px 12px;
+    border-radius:              2px;
+    background-color:           @surface;
+    text-color:                 @foreground;
+    children:                   [ "prompt", "entry" ];
+}
+
+prompt {
+    text-color:                 @muted;
+    padding:                    0 8px 0 0;
+}
+
+entry {
+    placeholder:                "Search…";
+    placeholder-color:          @muted;
+    text-color:                 @foreground;
+}
+
+listview {
+    lines:                      8;
+    spacing:                    2px;
+    fixed-height:               false;
+    scrollbar:                  false;
+    /* Same reasoning as the shared config: this drops Rofi's stock
+       decorative dashed top border, not a focus indicator — see
+       config/rofi/config.rasi's comment for the full explanation. */
+    border:                     0;
+}
+
+element {
+    padding:                    8px 10px;
+    border-radius:              1px;
+    text-color:                 @foreground;
+}
+
+element normal.normal {
+    background-color:           transparent;
+    text-color:                 @foreground;
+}
+
+element alternate.normal {
+    background-color:           @zebra;
+    text-color:                 @foreground;
+}
+
+element normal.active {
+    background-color:           transparent;
+    text-color:                 @foreground-strong;
+}
+
+element alternate.active {
+    background-color:           @zebra;
+    text-color:                 @foreground-strong;
+}
+
+element normal.urgent {
+    background-color:           transparent;
+    text-color:                 @foreground-strong;
+}
+
+element alternate.urgent {
+    background-color:           @zebra;
+    text-color:                 @foreground-strong;
+}
+
+element selected.normal,
+element selected.active,
+element selected.urgent {
+    background-color:           @foreground-strong;
+    text-color:                 @background;
+}
+
+element-text {
+    background-color:           inherit;
+    text-color:                 inherit;
+    vertical-align:             0.5;
+}
+
+element-icon {
+    size:                       20px;
+    padding:                    0 10px 0 0;
+}

@@ -1,0 +1,131 @@
+/* ember-forge — SwayNC structure override.
+   Shape/layout only. Colors from colors.css (unchanged from the first
+   pass). Restyled so the control center reads as the mockup's right-side
+   stack of separate, dense, technical cards — sharp corners, visible
+   borders, tight spacing — rather than one big soft panel. Docked
+   top-right (positionX: right — see config.json), same as the shared
+   default; only spacing/corners/width changed (control-center-width 340
+   vs. the shared config's 400 — see config.json). */
+@import url("colors.css");
+
+* {
+  font-family: "JetBrainsMono Nerd Font", "Noto Sans", sans-serif;
+  font-size: 13px;
+}
+
+/* The outer control-center plate: sharp corners (matches
+   hypr.lua geometry.rounding = 3) and a thicker, clearly visible border —
+   a technical enclosure, not a soft floating panel. Tighter internal
+   padding than the shared 8px keeps cards close together. */
+.control-center {
+  background-color: @bg;
+  border: 2px solid @border;
+  border-radius: 3px;
+  color: @fg;
+  padding: 6px;
+}
+
+.control-center-list-placeholder image {
+  transform: scale(0.4);
+  margin: -24px 0;
+}
+
+/* Tighter row padding than the shared 6px 4px — each notification reads
+   as a dense, separate card, not a row inside a loose list. */
+.notification-row {
+  padding: 3px 2px;
+}
+
+/* Each card: sharp corners, a full visible border (not just a hint of
+   depth) — this is the "separate, dense, technical card" the mockup's
+   right-side stack calls for, distinct from a single big panel. */
+.notification-background,
+.floating-notifications .notification-background {
+  background: @surface;
+  border: 1px solid @border;
+  border-radius: 2px;
+  color: @fg;
+}
+
+.floating-notifications .notification-background {
+  background: @surface_alt;
+}
+
+.notification-content {
+  padding: 8px 10px;
+}
+
+.summary {
+  color: @fg_strong;
+  font-weight: 700;
+}
+
+.body {
+  color: @muted;
+}
+
+.time {
+  color: @subtle;
+  font-size: 0.85em;
+}
+
+.widget-title {
+  color: @fg_strong;
+  padding: 6px 10px 4px;
+  font-weight: 700;
+  border-bottom: 1px solid @border;
+}
+
+.widget-title button {
+  background: @surface_alt;
+  color: @fg;
+  border: 1px solid @border;
+  border-radius: 2px;
+  transition: background-color 120ms ease-out, color 120ms ease-out;
+}
+
+.widget-title button:hover {
+  background: @fg_strong;
+  color: @bg;
+}
+
+.widget-dnd {
+  padding: 4px 10px 8px;
+}
+
+.widget-dnd > switch {
+  background: @surface_alt;
+  border: 1px solid @border;
+  border-radius: 2px;
+  transition: background-color 120ms ease-out;
+}
+
+.widget-dnd > switch:checked {
+  background: @fg_strong;
+}
+
+.close-button {
+  background: @surface_alt;
+  color: @fg;
+  border: 1px solid @border;
+  border-radius: 2px;
+  transition: background-color 120ms ease-out, color 120ms ease-out;
+}
+
+.close-button:hover {
+  background: @fg_strong;
+  color: @bg;
+}
+
+.notification-action {
+  background: @surface_alt;
+  color: @fg;
+  border: 1px solid @border;
+  border-radius: 2px;
+  transition: background-color 120ms ease-out, color 120ms ease-out;
+}
+
+.notification-action:hover {
+  background: @fg_strong;
+  color: @bg;
+}

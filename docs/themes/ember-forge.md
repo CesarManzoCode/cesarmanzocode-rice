@@ -101,13 +101,188 @@ Speeds are also uniformly faster than the shared defaults (e.g.
 `windows_popin` is tightened to `"popin 97%"` (vs the shared default's
 `"popin 94%"`) so windows snap into place with less growth on arrival.
 
+## Structure (v2 — structural pass)
+
+This section documents the mockup composition and the exact override
+files added to implement it. Nothing in the "Palette"/"What's
+structurally different"/"Wallpaper pack"/"Motion tuning" sections above
+changed in this pass — they're the approved v1 output. This pass adds
+layout/orientation/anchor overrides on top of that.
+
+### The mockup's quadrant, literally
+
+```
+[ LEFT VERTICAL DOCK ] [        large main area        ] [ right stack: system monitor card ]
+[  (icons, stacked    ] [                                ] [ right stack: terminal card        ]
+[   vertically)        ] [                                ] [                                    ]
+```
+
+Mapped onto the real shell surfaces this rice has (no fake apps — a
+"system monitor card"/"terminal card" are not built; the mockup's
+right-side stack is reproduced structurally via the one real component
+that already lives there):
+
+- **Left vertical dock -> Waybar**, restructured into an actual left-edge
+  vertical bar (not a re-tinted top bar).
+- **Large main area -> unchanged**: the normal Hyprland tiling area, gaps
+  already tightened via `geometry.gaps_in`/`gaps_out` from v1 (unchanged
+  this pass).
+- **Right-side stack of compact, dense, technical cards -> SwayNC's
+  notification/control-center cards**, restyled sharper/tighter/more
+  bordered and kept docked top-right, since notification cards are the
+  one real "stack of separate bordered cards" surface this rice has —
+  building an actual fake system-monitor or terminal widget to fill that
+  slot would violate the "no fake apps" rule, so density/border/corner
+  language does the identity work here instead of literal card content.
+- **Rofi** isn't named in the mockup's quadrant sketch above, but per the
+  contract's launcher-anchor guidance it was moved to anchor near the
+  dock (left edge) rather than dead center, for the same "launcher lives
+  near the dock" reasoning called out in the theme-authoring-contract.
+
+### Files added this pass (all OPTIONAL overrides per the v2 contract)
+
+```
+themes/ember-forge/waybar/config.jsonc   # NEW — left vertical dock, real Waybar structure change
+themes/ember-forge/waybar/style.css      # NEW — narrow-column CSS to match
+themes/ember-forge/rofi/config.rasi      # NEW — west-anchored launcher
+themes/ember-forge/swaync/config.json    # NEW — tighter margins/narrower width, still top-right
+themes/ember-forge/swaync/style.css      # NEW — sharp-cornered, bordered "card stack" styling
+```
+
+`themes/ember-forge/waybar/colors.css`, `rofi/colors.rasi`,
+`swaync/colors.css` are untouched (same values as v1) — only structure
+changed. `hypr.lua`'s `colors`/`geometry`/`motion` tables are also
+unchanged; a new `layers` table was added (see below).
+
+### Waybar: exact vertical-dock config shape used
+
+Copied `config/waybar/config.jsonc` as the starting point and changed:
+
+- `"position": "top"` -> `"position": "left"`
+- `"height": 34` -> `"width": 52` (primary dimension flips from height to
+  width for a side-docked bar — Waybar's own convention)
+- `margin-top`/`margin-left`/`margin-right` -> `margin-top`/`margin-bottom`/
+  `margin-left` (no `margin-right` needed pinned to the left screen edge)
+- **Module grouping**: kept the same three keys (`modules-left`,
+  `modules-center`, `modules-right`) rather than inventing new ones,
+  because Waybar's own behavior for a `left`/`right`-positioned bar reuses
+  these exact keys and stacks each group's modules top-to-bottom within
+  it — `modules-left` becomes the TOP group of the column, `modules-center`
+  the MIDDLE group, `modules-right` the BOTTOM group. This is Waybar's
+  documented behavior for non-`top`/`bottom` bar positions, not a
+  repurposing invented for this theme:
+  - top group: `custom/launcher`, `hyprland/workspaces` (same modules,
+    same order, as the shared bar's left group)
+  - middle group: `clock`
+  - bottom group: `pulseaudio`, `network`, `custom/cliphist`, `tray`,
+    `custom/notification`, `custom/power` (same modules, same order, same
+    `on-click`/`on-scroll`/`exec` commands as the shared bar's right group)
+- Every module's functional fields (`on-click`, `on-scroll-up/down`,
+  `exec`, `return-type`, `format-icons`) are byte-identical to the shared
+  config — nothing was dropped or rewired, only the always-visible text
+  for `pulseaudio`/`network` was trimmed to icon-only (percentage/
+  ifname/essid detail moved into `tooltip-format`, still reachable on
+  hover) because a 52px-wide column has no room for `"  75%"`-style
+  strings. `clock`'s format changed from `"{:%H:%M · %a %d %b}"` to a
+  stacked `"{:%H\n%M}"` with the full date moved to the tooltip, for the
+  same reason.
+- `style.css` was rewritten for a narrow, tall `window#waybar`: sharp
+  corners (`border-radius: 4px` on the plate, 1-2px on rows/tooltips,
+  matching `geometry.rounding = 3`), a visibly thicker 2px border, and
+  vertical padding/spacing between module groups instead of horizontal.
+
+### Rofi: anchor choice
+
+Moved from the shared config's `location: center; anchor: center;` to
+`location: west; anchor: west;` with a small `x-offset: 24px`, so the
+launcher opens near the left dock rather than in the middle of the
+screen — consistent with "the launcher lives near the dock." Also
+dropped rounding to 2px (from the shared config's 14px) and doubled the
+border to 2px, to read as more angular/technical than arctic-glass's
+centered glass launcher. Because the anchor moved off-center,
+`hypr.lua`'s new `layers.rofi.animation` is set to `"slide left"`
+(replacing the v1-inherited default `"popin 96%"`, which only makes sense
+for a centered popup).
+
+### SwayNC: what changed vs. what didn't
+
+`positionX`/`positionY` stay `"right"`/`"top"` — the v1 default — because
+the mockup's right-side stack sits on the right, same as SwayNC's
+existing dock edge; nothing about docking a left-side Waybar requires
+moving it. What changed: `control-center-width` 400 -> 340 (narrower,
+denser card), `control-center-margin-right`/`-top` tightened from
+14/8 to 8/8 (a left-dock theme has no top bar to clear, so it can sit
+closer to the corner), and `style.css` gives every card a full 1px
+visible border + 2px corner radius (vs. the shared config's soft 11-14px
+rounding and border-as-depth-hint-only), so each notification reads as a
+separate bordered technical card in a stack, not rows inside one soft
+panel.
+
+### `hypr.lua` `layers` table (new this pass)
+
+```lua
+layers = {
+  waybar = { animation = "slide left" },
+  rofi   = { animation = "slide left" },
+},
+```
+
+`swaync` is deliberately omitted — its edge didn't change (still
+top-right, still the v1-inherited `"slide right"` default from
+`config/hypr/layers.lua`), only its card styling did.
+
+### Hyprlock: tightened composition
+
+v1's hyprlock positions (clock at `0, 140`, date at `0, 40`, input at
+`0, -120` — a ~260px vertical spread) were structurally identical to
+monochrome's, just re-colored. This pass pulls the three blocks in to
+clock `0, 60`, date `0, -8`, input `0, -90` (a ~150px spread), bumps the
+clock to `font_size 92` (from 88) and the input's `outline_thickness` to
+3 (from 2) with `rounding` dropped to 2 (from 6), so the whole stack
+reads as denser/firmer/more industrial and distinct from monochrome's
+airier layout, while keeping the same three required blocks
+(`background`, two `label`s, one `input-field`) and the `@WALLPAPER@`
+placeholder.
+
+### Wallpaper
+
+Not regenerated. The existing pack's quiet zones (a top strip + a
+centered box, per `scripts/dev/wallpaper_lib.py`'s `Canvas` defaults)
+don't overlap a left-edge vertical dock — the dock now sits where the
+wallpaper was never made deliberately quiet, but none of the four
+variants place important detail hard against the left edge either, so
+there's no real visual conflict to fix. Confirmed by inspection of all
+four variants' composition descriptions above (diagonals/truss/fractures/
+off-center plate) — none of them anchor content to the left edge.
+
 ## Manual verification (real hardware only)
 
 This environment has no live Hyprland/Wayland session, no `lua`, no
 Waybar/Rofi/SwayNC/Kitty binaries — everything below was only checked
 statically (`tests/check_all_themes.py`, `tests/run_tests.sh`, PNG header/
-JSON parsing). On real hardware (Hyprland 0.56.2 / Wayland), after
-`./apply.sh` with this theme selected:
+JSON parsing, and manually stripping `//` comments from
+`waybar/config.jsonc` to confirm it's valid JSON). **This environment
+cannot confirm Waybar actually renders a working vertical bar with this
+exact config on the real installed Waybar version — that is a REQUIRED
+manual runtime check before calling this theme done.** In particular,
+verify on real hardware:
+
+- **Waybar left dock (REQUIRED first check)**: after `./apply.sh
+  ember-forge` (or `./apply.sh ember-forge waybar`), confirm Waybar
+  actually docks to the left edge as a narrow vertical column — not a
+  top bar, not a crash/fallback to defaults. Confirm every module still
+  works: launcher click opens Rofi, workspace buttons switch/reflect the
+  active workspace, the clock shows stacked HH/MM with the full date on
+  hover, pulseaudio/network icons respond to click/scroll and show
+  correct tooltips, cliphist/tray/notification/power icons are all
+  present and clickable. If this version of Waybar handles vertical
+  `modules-left`/`modules-center`/`modules-right` differently than
+  documented here, this is the file to revisit.
+- **Waybar entrance animation**: reload Waybar (or trigger a monitor
+  hotplug) and confirm it slides in from the left edge, not the top.
+
+On real hardware (Hyprland 0.56.2 / Wayland), after `./apply.sh` with
+this theme selected:
 
 - **Windows**: open/close a few apps — opening should read as a quick,
   tight snap into place (barely any growth, unlike monochrome's slightly
@@ -123,10 +298,17 @@ JSON parsing). On real hardware (Hyprland 0.56.2 / Wayland), after
   square, not the soft squircle monochrome uses.
 - **Rofi** (`SUPER+R`): panel should feel firm/opaque, not floating —
   confirm the copper border and near-opaque background read as a
-  technical panel, not glass.
+  technical panel, AND confirm it opens anchored near the left edge
+  (sliding in from the left), not centered on screen.
 - **SwayNC**: cards should show clear stacked hierarchy
-  (`surface`→`surface_alt`) and feel more solid/less vaporous than
-  monochrome's control center.
+  (`surface`→`surface_alt`), feel more solid/less vaporous than
+  monochrome's control center, AND each notification/card should show a
+  clearly visible full border with sharp (near-square) corners — a stack
+  of separate technical cards, not rows in one soft panel. Should still
+  dock top-right and not overlap the left dock.
+- **Hyprlock**: confirm the clock/date/input stack reads as visibly
+  tighter/denser than monochrome's lock screen, with sharp (2px) input
+  corners.
 - **Wallpaper**: `wallpapers/ember-forge.png` (== `ember-forge-temper.png`)
   should render with visible copper/amber seams against the carbon base,
   and Waybar's strip / Rofi's usual position should sit over the
