@@ -1,0 +1,12 @@
+/* ivory-paper — Waybar palette (visual layer only).
+   Light, near-opaque bar — this theme's blur is deliberately light (see
+   hypr.lua's geometry), so the bar leans on a solid warm-ivory fill and a
+   thin ink-toned border for definition instead of translucency. */
+@define-color bar_bg alpha(#fbf9f4, 0.96);
+@define-color bar_border #ddd6c7;
+@define-color bg #f7f4ee;
+@define-color surface_alt #f1ece2;
+@define-color fg #262319;
+@define-color fg_strong #141210;
+@define-color muted #8d8574;
+@define-color subtle #c7bfae;

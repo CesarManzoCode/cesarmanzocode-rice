@@ -1,0 +1,33 @@
+{
+  "manifest_version": 3,
+  "name": "cesarmanzocode-rice — ivory-paper",
+  "version": "1.0.0",
+  "description": "Ivory-paper browser-chrome theme (frame/toolbar/omnibox/tabs only — no web-content theming) matching this rice's Waybar/Kitty/Rofi/SwayNC palette.",
+  "theme": {
+    "colors": {
+      "frame": [239, 234, 224],
+      "frame_inactive": [247, 244, 238],
+
+      "toolbar": [251, 249, 244],
+      "toolbar_text": [38, 35, 25],
+      "toolbar_button_icon": [38, 35, 25],
+      "button_background": [241, 236, 226],
+
+      "omnibox_background": [251, 249, 244],
+      "omnibox_text": [38, 35, 25],
+
+      "tab_text": [20, 18, 16],
+      "background_tab": [239, 234, 224],
+      "background_tab_inactive": [247, 244, 238],
+      "tab_background_text": [141, 133, 116],
+      "tab_background_text_inactive": [141, 133, 116],
+
+      "bookmark_text": [38, 35, 25],
+
+      "ntp_background": [247, 244, 238],
+      "ntp_header": [239, 234, 224],
+      "ntp_link": [91, 107, 94],
+      "ntp_text": [38, 35, 25]
+    }
+  }
+}
