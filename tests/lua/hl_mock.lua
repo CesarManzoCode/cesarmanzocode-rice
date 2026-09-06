@@ -19,6 +19,7 @@ local M = {}
 
 M.binds = {}
 M.window_rules = {}
+M.layer_rules = {}
 M.monitors = {}
 M.configs = {}
 M.animations = {}
@@ -72,6 +73,22 @@ function M.window_rule(rule)
     end
   end
   M.window_rules[#M.window_rules + 1] = rule
+end
+
+-- hl.layer_rule: match.namespace must be a non-empty string and, when a
+-- numeric ignore_alpha is given, it must sit within layer-shell's valid
+-- 0..1 alpha-threshold range (the shape this repo actually sends; not a
+-- reimplementation of every field Hyprland's real layer-rule accepts).
+function M.layer_rule(rule)
+  assert(type(rule) == "table", "hl.layer_rule: rule must be a table")
+  assert(type(rule.match) == "table" and type(rule.match.namespace) == "string"
+    and rule.match.namespace ~= "", "hl.layer_rule: match.namespace must be a non-empty string")
+  if rule.ignore_alpha ~= nil then
+    assert(type(rule.ignore_alpha) == "number" and rule.ignore_alpha >= 0 and rule.ignore_alpha <= 1,
+      string.format("hl.layer_rule: ignore_alpha must be a number in [0, 1], got %s",
+        tostring(rule.ignore_alpha)))
+  end
+  M.layer_rules[#M.layer_rules + 1] = rule
 end
 
 function M.monitor(spec)
