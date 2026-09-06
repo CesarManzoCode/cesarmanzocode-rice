@@ -158,6 +158,14 @@ assert 0.80 <= v <= 0.86, v
 "
 '
 
+echo "== final polish: swaync empty-state icon actually targets the real node =="
+check "swaync style.css targets the real placeholder selector (verified against 0.12.6 source)" \
+  grep -q '\.control-center-list-placeholder image' config/swaync/style.css
+check "old, structurally-inert '.control-center > box > image' selector is gone (mentioned only in prose, never used live)" \
+  bash -c '! grep -qE "^\.control-center > box > image \{" config/swaync/style.css'
+check "placeholder icon is shrunk via a CSS transform (pixel-size wins over -gtk-icon-size)" \
+  bash -c 'sed -n "/\.control-center-list-placeholder image/,/}/p" config/swaync/style.css | grep -q "transform: scale"'
+
 echo "== v3: swaync adaptive control center =="
 check "swaync fit-to-screen is false" \
   bash -c 'python3 -c "import json; assert json.load(open(\"config/swaync/config.json\"))[\"fit-to-screen\"] is False"'
@@ -165,6 +173,14 @@ check "swaync control-center-height is -1 (content-fit)" \
   bash -c 'python3 -c "import json; assert json.load(open(\"config/swaync/config.json\"))[\"control-center-height\"] == -1"'
 check "swaync config.json is valid JSON" \
   bash -c 'python3 -c "import json; json.load(open(\"config/swaync/config.json\"))"'
+
+echo "== final wallpaper pack: 4 variants + canonical default + determinism =="
+if command -v python3 >/dev/null 2>&1; then
+  check "wallpaper pack invariants (resolution/grayscale/canonical/determinism)" \
+    python3 tests/check_wallpapers.py
+else
+  echo "  (python3 not installed, skipping)"
+fi
 
 echo "== v3: brave theme (manifest-only extension, no code) =="
 BRAVE_MANIFEST="themes/monochrome/brave/manifest.json"
@@ -356,6 +372,71 @@ check "swaync was NOT installed" bash -c "[ ! -e '$HOME2/.config/swaync' ]"
 check "rofi WAS installed" test -f "$HOME2/.config/rofi/config.rasi"
 rm -rf "$HOME2"
 
+echo "== state migration: a pre-brave install picks up brave on the next apply =="
+HOME3="$(mktemp -d)"
+mkdir -p "$HOME3/.config/cesarmanzocode-rice"
+cat > "$HOME3/.config/cesarmanzocode-rice/user.lua" <<'EOF'
+return {
+  components = { hypr = true, waybar = false, rofi = false, swaync = false,
+                 kitty = false, hyprlock = false, hypridle = false, wallpaper = false },
+  apps = { terminal = "kitty", browser = "brave", filemanager = "dolphin", launcher = "rofi -show drun" },
+  binds = {},
+}
+EOF
+# A pre-brave state.sh: no `brave` in SELECTED_COMPONENTS, no
+# STATE_SCHEMA_VERSION line at all — exactly what install.sh wrote before
+# the brave component existed.
+cat > "$HOME3/.config/cesarmanzocode-rice/state.sh" <<'EOF'
+THEME="monochrome"
+SELECTED_COMPONENTS="hypr"
+EOF
+check "apply.sh migrates a pre-brave state.sh" env HOME="$HOME3" XDG_CONFIG_HOME="$HOME3/.config" \
+  XDG_DATA_HOME="$HOME3/.local/share" ./apply.sh
+check "brave theme got staged (component migrated on, matching install.sh's default)" \
+  test -f "$HOME3/.local/share/cesarmanzocode-rice/brave/monochrome/manifest.json"
+check "state.sh now records STATE_SCHEMA_VERSION" \
+  grep -q '^STATE_SCHEMA_VERSION=' "$HOME3/.config/cesarmanzocode-rice/state.sh"
+check "state.sh now lists brave in SELECTED_COMPONENTS" \
+  bash -c '. "'"$HOME3"'/.config/cesarmanzocode-rice/state.sh"; case " $SELECTED_COMPONENTS " in *" brave "*) exit 0;; *) exit 1;; esac'
+check "migration did not touch the user's other explicit off-choices (waybar stays off)" \
+  bash -c "[ ! -e '$HOME3/.config/waybar' ]"
+
+# Re-running apply.sh must not re-print the migration or duplicate `brave`.
+check "second apply.sh run is a no-op for the migration" env HOME="$HOME3" XDG_CONFIG_HOME="$HOME3/.config" \
+  XDG_DATA_HOME="$HOME3/.local/share" ./apply.sh
+check "SELECTED_COMPONENTS lists brave exactly once after two runs" \
+  bash -c '[ "$(grep -o "brave" "'"$HOME3"'/.config/cesarmanzocode-rice/state.sh" | wc -l)" -eq 1 ]'
+rm -rf "$HOME3"
+
+echo "== state migration: once versioned, an explicit brave=off choice is never re-added =="
+HOME4="$(mktemp -d)"
+mkdir -p "$HOME4/.config/cesarmanzocode-rice"
+cat > "$HOME4/.config/cesarmanzocode-rice/user.lua" <<'EOF'
+return {
+  components = { hypr = true, waybar = false, rofi = false, swaync = false,
+                 kitty = false, hyprlock = false, hypridle = false, wallpaper = false, brave = false },
+  apps = { terminal = "kitty", browser = "brave", filemanager = "dolphin", launcher = "rofi -show drun" },
+  binds = {},
+}
+EOF
+# Already at the current schema version, brave absent on purpose — e.g. a
+# fresh install.sh run where the user answered "no" to the brave prompt.
+# Because the file is already versioned, migrate_state's v1->v2 step never
+# runs again, so this stays off forever, unlike the one-time legacy
+# (unversioned) case above.
+cat > "$HOME4/.config/cesarmanzocode-rice/state.sh" <<'EOF'
+THEME="monochrome"
+SELECTED_COMPONENTS="hypr"
+STATE_SCHEMA_VERSION="2"
+EOF
+check "apply.sh runs against an already-versioned, brave-off state" \
+  env HOME="$HOME4" XDG_CONFIG_HOME="$HOME4/.config" XDG_DATA_HOME="$HOME4/.local/share" ./apply.sh
+check "brave was NOT re-added (explicit choice preserved)" \
+  bash -c "[ ! -e '$HOME4/.local/share/cesarmanzocode-rice/brave' ]"
+check "state.sh's SELECTED_COMPONENTS is untouched (no rewrite needed)" \
+  grep -q '^SELECTED_COMPONENTS="hypr"$' "$HOME4/.config/cesarmanzocode-rice/state.sh"
+rm -rf "$HOME4"
+
 echo "== rofi: every element state is explicitly themed, monochrome only =="
 ROFI_RASI="config/rofi/config.rasi"
 check "no bare 'element selected {' left unqualified (must be selected.normal/.active/.urgent)" \
@@ -365,6 +446,9 @@ for state in normal.normal normal.active normal.urgent \
              selected.normal selected.active selected.urgent; do
   check "rofi themes 'element $state'" bash -c "grep -qF 'element $state' '$ROFI_RASI'"
 done
+check "listview zeroes rofi's own default dashed top border" bash -c '
+  sed -n "/^listview {/,/^}/p" config/rofi/config.rasi | grep -qE "border:\s*0;"
+'
 check "no color words (blue/red/beige) outside comments in rofi theme files" bash -c '
   python3 -c "
 import re, sys
