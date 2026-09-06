@@ -194,7 +194,7 @@ if [ "$DO_PACKAGES" = "1" ]; then
   # component is on, regardless of whether waybar is installed — don't let
   # them arrive only as an accidental transitive dependency of Waybar.
   PKG_LIST=(xdg-desktop-portal-hyprland xdg-desktop-portal-gtk grim slurp cliphist \
-            playerctl wireplumber \
+            playerctl wireplumber libnotify \
             ttf-jetbrains-mono-nerd noto-fonts noto-fonts-emoji)
   [ "$COMPONENT_POLKIT" = "1" ] && PKG_LIST+=(hyprpolkitagent)
   for comp in "${!PKGS_FOR[@]}"; do

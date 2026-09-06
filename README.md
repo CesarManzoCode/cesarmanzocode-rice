@@ -28,7 +28,7 @@ never overwrites your preferences.
 
 Stack this rice targets: Hyprland, UWSM, Waybar, Rofi, SwayNC, hyprpaper,
 hyprlock, hypridle, hyprpolkitagent, Kitty, PipeWire/WirePlumber, grim,
-slurp, cliphist, JetBrains Mono Nerd Font, Noto fonts. Where a component
+slurp, cliphist, libnotify, JetBrains Mono Nerd Font, Noto fonts. Where a component
 ships a systemd `--user` unit (waybar, swaync, hyprpaper, hypridle,
 hyprpolkitagent), that unit — not Hyprland's own config — is what starts
 it; see [Autostart & UWSM](#autostart--uwsm) below.

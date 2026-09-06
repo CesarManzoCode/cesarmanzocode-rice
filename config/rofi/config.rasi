@@ -13,25 +13,25 @@ configuration {
 }
 
 window {
-    width:                      480px;
+    width:                      520px;
     location:                   center;
     anchor:                     center;
-    padding:                    16px;
+    padding:                    18px;
     border:                     1px;
-    border-radius:              12px;
+    border-radius:              14px;
     background-color:           @background;
     border-color:               @border;
 }
 
 mainbox {
     children:                   [ "inputbar", "listview" ];
-    spacing:                    10px;
+    spacing:                    12px;
     background-color:           transparent;
 }
 
 inputbar {
-    padding:                    10px 12px;
-    border-radius:              8px;
+    padding:                    11px 14px;
+    border-radius:              10px;
     background-color:           @surface;
     text-color:                 @foreground;
     children:                   [ "prompt", "entry" ];
@@ -50,18 +50,70 @@ entry {
 
 listview {
     lines:                      8;
-    spacing:                    4px;
+    spacing:                    5px;
     fixed-height:               false;
     scrollbar:                  false;
 }
 
+/* ---- element states -------------------------------------------------
+   Rofi's theming model crosses two independent axes per row:
+     - zebra striping:        normal   / alternate
+     - selection + urgency:   normal   / active   / urgent
+       (the first also has a "selected" counterpart: selected.normal,
+       selected.active, selected.urgent)
+   so there are 6 real combinations (normal.normal, normal.active,
+   normal.urgent, alternate.normal, alternate.active, alternate.urgent)
+   plus their 3 "selected" counterparts. Leaving any of these unset lets
+   Rofi fall back to its own built-in default theme for that combination —
+   this is exactly what produced the beige rows / blue-grey selection seen
+   in earlier builds of this rice. Every combination is themed explicitly
+   below; none of them introduce color. */
+
 element {
-    padding:                    8px 10px;
-    border-radius:              8px;
+    padding:                    9px 11px;
+    border-radius:              9px;
     text-color:                 @foreground;
 }
 
-element selected {
+/* Base rows: a near-imperceptible zebra (surface vs. transparent), same
+   foreground either way — reads as one coherent list, not two themes. */
+element normal.normal {
+    background-color:           transparent;
+    text-color:                 @foreground;
+}
+
+element alternate.normal {
+    background-color:           @surface;
+    text-color:                 @foreground;
+}
+
+/* "active" (e.g. an already-open window in the window switcher) and
+   "urgent" both stay strictly monochrome — no accent, no red. */
+element normal.active {
+    background-color:           transparent;
+    text-color:                 @foreground-strong;
+}
+
+element alternate.active {
+    background-color:           @surface;
+    text-color:                 @foreground-strong;
+}
+
+element normal.urgent {
+    background-color:           transparent;
+    text-color:                 @foreground-strong;
+}
+
+element alternate.urgent {
+    background-color:           @surface;
+    text-color:                 @foreground-strong;
+}
+
+/* Selection always wins: full white row, full black text, regardless of
+   zebra stripe or urgency — the one deliberately loud element on screen. */
+element selected.normal,
+element selected.active,
+element selected.urgent {
     background-color:           @foreground-strong;
     text-color:                 @background;
 }

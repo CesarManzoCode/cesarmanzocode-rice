@@ -30,14 +30,16 @@ check() {
 }
 
 echo "== bash -n =="
-for f in install.sh apply.sh uninstall.sh scripts/lib/*.sh scripts/dev/*.sh; do
+for f in install.sh apply.sh uninstall.sh scripts/lib/*.sh scripts/dev/*.sh \
+         config/hypr/screenshot.sh config/rofi/power-menu.sh; do
   [ -f "$f" ] || continue
   check "bash -n $f" bash -n "$f"
 done
 
 echo "== shellcheck (if available) =="
 if command -v shellcheck >/dev/null 2>&1; then
-  for f in install.sh apply.sh uninstall.sh scripts/lib/common.sh scripts/lib/binds.sh; do
+  for f in install.sh apply.sh uninstall.sh scripts/lib/common.sh scripts/lib/binds.sh \
+           config/hypr/screenshot.sh config/rofi/power-menu.sh; do
     check "shellcheck $f" shellcheck -S warning "$f"
   done
 else
@@ -187,6 +189,86 @@ check "kitty was NOT installed" bash -c "[ ! -e '$HOME2/.config/kitty' ]"
 check "swaync was NOT installed" bash -c "[ ! -e '$HOME2/.config/swaync' ]"
 check "rofi WAS installed" test -f "$HOME2/.config/rofi/config.rasi"
 rm -rf "$HOME2"
+
+echo "== rofi: every element state is explicitly themed, monochrome only =="
+ROFI_RASI="config/rofi/config.rasi"
+check "no bare 'element selected {' left unqualified (must be selected.normal/.active/.urgent)" \
+  bash -c "! grep -qE '^element selected \{' '$ROFI_RASI'"
+for state in normal.normal normal.active normal.urgent \
+             alternate.normal alternate.active alternate.urgent \
+             selected.normal selected.active selected.urgent; do
+  check "rofi themes 'element $state'" bash -c "grep -qF 'element $state' '$ROFI_RASI'"
+done
+check "no color words (blue/red/beige) outside comments in rofi theme files" bash -c '
+  python3 -c "
+import re, sys
+text = \"\"
+for f in [\"config/rofi/config.rasi\", \"themes/monochrome/rofi/colors.rasi\"]:
+    text += re.sub(r\"/\\*.*?\\*/\", \"\", open(f).read(), flags=re.S)
+sys.exit(1 if re.search(r\"blue|beige|crimson|#ff0000|#0000ff\", text, re.I) else 0)
+"
+'
+
+echo "== waybar: ethernet interface name is tooltip-only, never on the bar =="
+check "no {ifname} in a bar-visible waybar format" bash -c '
+  ! grep -E "\"format(-wifi|-ethernet|-disconnected|-linked)?\"[^,}]*\{ifname\}" config/waybar/config.jsonc
+'
+check "{ifname} still available in a network tooltip" \
+  grep -q "tooltip-format.*{ifname}" config/waybar/config.jsonc
+
+echo "== screenshot helper: portable, cancel-safe, notification is best-effort =="
+SCREENSHOT_SH="config/hypr/screenshot.sh"
+check "screenshot.sh has no hardcoded username" bash -c '! grep -qE "/home/[a-zA-Z_][a-zA-Z0-9_-]*/" '"$SCREENSHOT_SH"
+check "screenshot.sh saves to \$HOME/Pictures/Screenshots" \
+  grep -q 'HOME/Pictures/Screenshots' "$SCREENSHOT_SH"
+check "screenshot.sh notification is gated on notify-send being present" \
+  grep -q 'command -v notify-send' "$SCREENSHOT_SH"
+
+SCR_BIN="$(mktemp -d)"
+SCR_HOME="$(mktemp -d)"
+cat > "$SCR_BIN/grim" <<'EOF'
+#!/usr/bin/env bash
+# Mock grim: last arg is the output path.
+for f in "$@"; do :; done
+touch "$f"
+EOF
+cat > "$SCR_BIN/slurp-ok" <<'EOF'
+#!/usr/bin/env bash
+echo "0,0 100x100"
+EOF
+cat > "$SCR_BIN/slurp-cancel" <<'EOF'
+#!/usr/bin/env bash
+exit 1
+EOF
+chmod +x "$SCR_BIN"/grim "$SCR_BIN"/slurp-ok "$SCR_BIN"/slurp-cancel
+
+check "full mode saves exactly one file" bash -c '
+  set -e
+  rm -f "'"$SCR_HOME"'"/Pictures/Screenshots/*.png 2>/dev/null || true
+  PATH="'"$SCR_BIN"':$PATH" HOME="'"$SCR_HOME"'" bash "'"$SCREENSHOT_SH"'" full
+  n=$(find "'"$SCR_HOME"'/Pictures/Screenshots" -name "*.png" 2>/dev/null | wc -l)
+  [ "$n" -eq 1 ]
+'
+check "region mode with a real slurp selection saves a file" bash -c '
+  rm -rf "'"$SCR_HOME"'/Pictures/Screenshots"
+  ln -sf "'"$SCR_BIN"'/slurp-ok" "'"$SCR_BIN"'/slurp"
+  PATH="'"$SCR_BIN"':$PATH" HOME="'"$SCR_HOME"'" bash "'"$SCREENSHOT_SH"'" region
+  n=$(find "'"$SCR_HOME"'/Pictures/Screenshots" -name "*.png" 2>/dev/null | wc -l)
+  [ "$n" -eq 1 ]
+'
+check "region mode cancelled (slurp fails) creates no file" bash -c '
+  rm -rf "'"$SCR_HOME"'/Pictures/Screenshots"
+  ln -sf "'"$SCR_BIN"'/slurp-cancel" "'"$SCR_BIN"'/slurp"
+  PATH="'"$SCR_BIN"':$PATH" HOME="'"$SCR_HOME"'" bash "'"$SCREENSHOT_SH"'" region
+  [ ! -d "'"$SCR_HOME"'/Pictures/Screenshots" ] || \
+    [ -z "$(find "'"$SCR_HOME"'/Pictures/Screenshots" -name "*.png" 2>/dev/null)" ]
+'
+check "full mode succeeds even with no notify-send on PATH" bash -c '
+  rm -rf "'"$SCR_HOME"'/Pictures/Screenshots"
+  EMPTYBIN=$(mktemp -d)
+  PATH="'"$SCR_BIN"':$EMPTYBIN:/usr/bin:/bin" HOME="'"$SCR_HOME"'" bash "'"$SCREENSHOT_SH"'" full
+'
+rm -rf "$SCR_BIN" "$SCR_HOME"
 
 echo "== duplicate bind detection =="
 check "register_bind rejects a duplicate" bash -c '

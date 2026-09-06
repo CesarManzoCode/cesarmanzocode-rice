@@ -11,7 +11,7 @@
 
   "modules-left": ["custom/launcher", "hyprland/workspaces"],
   "modules-center": ["clock"],
-  "modules-right": ["pulseaudio", "network", "custom/cliphist", "tray", "custom/power"],
+  "modules-right": ["pulseaudio", "network", "custom/cliphist", "tray", "custom/notification", "custom/power"],
 
   "custom/launcher": {
     "format": "󰣇",
@@ -40,9 +40,12 @@
 
   "network": {
     "format-wifi": "  {signalStrength}%",
-    "format-ethernet": "󰈀  {ifname}",
+    "format-ethernet": "󰈀  Wired",
     "format-disconnected": "󰤭  offline",
-    "tooltip-format": "{ifname}: {ipaddr}/{cidr}"
+    "format-linked": "󰈀  Wired (no IP)",
+    "tooltip-format-wifi": "{essid}  ·  {signalStrength}%\n{ifname}: {ipaddr}/{cidr}",
+    "tooltip-format-ethernet": "{ifname}: {ipaddr}/{cidr}",
+    "tooltip-format-disconnected": "Disconnected"
   },
 
   "custom/cliphist": {
@@ -54,6 +57,28 @@
   "tray": {
     "icon-size": 16,
     "spacing": 8
+  },
+
+  // Requires the swaync component; if it's disabled on this machine,
+  // swaync-client is simply absent and the click is a no-op — same
+  // best-effort convention already used by custom/cliphist above (see
+  // README "Known limitations"). "alt"/"class" values come straight from
+  // `swaync-client -swb`'s own JSON output — verify with that command on
+  // the real machine if the icon ever looks wrong for the DND state.
+  "custom/notification": {
+    "exec": "swaync-client -swb",
+    "return-type": "json",
+    "format": "{icon}",
+    "format-icons": {
+      "notification": "󰂚",
+      "none": "󰂜",
+      "dnd-notification": "󰂛",
+      "dnd-none": "󰂛"
+    },
+    "on-click": "swaync-client -t -sw",
+    "on-click-right": "swaync-client -d -sw",
+    "escape": true,
+    "tooltip": true
   },
 
   "custom/power": {

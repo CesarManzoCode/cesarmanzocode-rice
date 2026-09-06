@@ -9,24 +9,34 @@
 .control-center {
   background-color: @bg;
   border: 1px solid @border;
-  border-radius: 12px;
+  border-radius: 14px;
   color: @fg;
+  padding: 6px;
 }
 
 .notification-row {
-  padding: 4px;
+  padding: 6px 4px;
 }
 
+/* Depth comes from a slightly lighter surface + a fine border, not color —
+   each card should read as sitting a level above the translucent panel
+   behind it (which itself sits above the blurred wallpaper). */
 .notification-background,
 .floating-notifications .notification-background {
   background: @surface;
   border: 1px solid @border;
-  border-radius: 10px;
+  border-radius: 11px;
   color: @fg;
 }
 
+.floating-notifications .notification-background {
+  /* Popups sit on bare desktop (no panel behind them), so they get a touch
+     more surface contrast than cards inside the control center. */
+  background: @surface_alt;
+}
+
 .notification-content {
-  padding: 8px;
+  padding: 10px 12px;
 }
 
 .summary {
@@ -38,28 +48,39 @@
   color: @muted;
 }
 
+/* Timestamps are the least important text on a notification — secondary
+   by size as well as color. */
 .time {
   color: @subtle;
+  font-size: 0.9em;
 }
 
 .widget-title {
   color: @fg_strong;
-  padding: 10px 12px;
+  padding: 12px 14px;
+  font-weight: 600;
 }
 
 .widget-title button {
   background: @surface_alt;
   color: @fg;
   border-radius: 8px;
+  transition: background-color 120ms ease-out, color 120ms ease-out;
+}
+
+.widget-title button:hover {
+  background: @fg_strong;
+  color: @bg;
 }
 
 .widget-dnd {
-  padding: 6px 12px;
+  padding: 8px 14px;
 }
 
 .widget-dnd > switch {
   background: @surface_alt;
   border-radius: 10px;
+  transition: background-color 120ms ease-out;
 }
 
 .widget-dnd > switch:checked {
@@ -70,6 +91,7 @@
   background: @surface_alt;
   color: @fg;
   border-radius: 8px;
+  transition: background-color 120ms ease-out, color 120ms ease-out;
 }
 
 .close-button:hover {
@@ -81,6 +103,7 @@
   background: @surface_alt;
   color: @fg;
   border-radius: 8px;
+  transition: background-color 120ms ease-out, color 120ms ease-out;
 }
 
 .notification-action:hover {

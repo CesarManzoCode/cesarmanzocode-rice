@@ -39,6 +39,11 @@ hl.config({
       passes = g.blur_passes,
       new_optimizations = true,
       ignore_opacity = true,
+      noise = g.blur_noise,
+      contrast = g.blur_contrast,
+      brightness = g.blur_brightness,
+      vibrancy = g.blur_vibrancy,
+      vibrancy_darkness = g.blur_vibrancy_darkness,
     },
 
     shadow = {
@@ -49,6 +54,19 @@ hl.config({
     },
   },
 })
+
+-- rounding_power is set in its own hl.config() call, guarded by pcall: it's
+-- a newer decoration field than everything above and not guaranteed to
+-- exist in every Hyprland 0.55+ build. If this exact installed version
+-- rejects it, the error is swallowed here (purely decorative, nothing else
+-- in this file depends on it) rather than failing the whole config load —
+-- apply.sh's own `hyprctl configerrors` check + auto-revert remains the
+-- backstop for anything that *does* break config loading.
+if g.rounding_power then
+  pcall(function()
+    hl.config({ decoration = { rounding_power = g.rounding_power } })
+  end)
+end
 
 -- A handful of low-risk, broadly useful window rules. Nothing app-specific
 -- beyond well-known system dialogs.
