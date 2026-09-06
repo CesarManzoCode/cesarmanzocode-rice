@@ -1,0 +1,14 @@
+/* arctic-glass — SwayNC palette (visual layer only).
+   bg alpha kept low (0.62, under monochrome's 0.8) — real layer blur
+   (namespace ^swaync-control-center$, see config/hypr/layers.lua) is
+   confined to the panel via ignore_alpha, so the panel can afford to let
+   more of that blur through and still read as a refined, deep glass
+   surface rather than a flat card. */
+@define-color bg rgba(10, 15, 22, 0.62);
+@define-color surface #121b25;
+@define-color surface_alt #1a2530;
+@define-color border #2a3a46;
+@define-color fg #e8f0f5;
+@define-color fg_strong #ffffff;
+@define-color muted #8ca0af;
+@define-color subtle #3d4c58;
