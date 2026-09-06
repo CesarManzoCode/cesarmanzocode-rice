@@ -1,0 +1,156 @@
+/* Rofi structure — layout only. Colors from the active theme's colors.rasi.
+ *
+ * Structural override (v2): an intentionally editorial LIGHT launcher, not
+ * a light-colored copy of the shared/dark one. Differences from the
+ * shared config:
+ *   - more internal whitespace throughout (window padding, mainbox/
+ *     listview spacing, row padding);
+ *   - the search row is no longer a rounded fill box — it's set off from
+ *     the results by a single thin hairline rule (a real divider, not a
+ *     background-color block switch);
+ *   - selection is reinterpreted in Ivory's own quieter language: a
+ *     restrained zebra-tint background plus a thin left-border accent,
+ *     not the dark theme's stark full-invert (foreground-strong fill +
+ *     inverted text). Still unambiguous — the accent bar only ever
+ *     appears on the selected row.
+ */
+@import "colors.rasi"
+
+configuration {
+    modi:                       "drun,run";
+    show-icons:                 true;
+    display-drun:               "Apps";
+    drun-display-format:        "{name}";
+    font:                       "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width:                      540px;
+    location:                   center;
+    anchor:                     center;
+    padding:                    28px;
+    border:                     1px;
+    border-radius:              4px;
+    background-color:           @background;
+    border-color:               @border;
+}
+
+mainbox {
+    children:                   [ "inputbar", "listview" ];
+    spacing:                    18px;
+    background-color:           transparent;
+}
+
+/* No fill, no pill — a plain row set off from the results below by a
+   single hairline rule along its bottom edge. */
+inputbar {
+    padding:                    0 2px 16px 2px;
+    border:                     0px 0px 1px 0px;
+    border-color:               @border;
+    background-color:           transparent;
+    text-color:                 @foreground;
+    children:                   [ "prompt", "entry" ];
+}
+
+prompt {
+    text-color:                 @muted;
+    padding:                    0 10px 0 0;
+}
+
+entry {
+    placeholder:                "Search…";
+    placeholder-color:          @muted;
+    text-color:                 @foreground;
+}
+
+listview {
+    lines:                      8;
+    spacing:                    8px;
+    fixed-height:               false;
+    scrollbar:                  false;
+    /* Rofi 2.0's own built-in default theme (doc/default_theme.rasi)
+       gives `listview` a `border: 2px dash 0px 0px` — a dashed line along
+       its top edge — that this file never overrode. It's a leftover
+       decorative separator from Rofi's stock theme, not a keyboard-focus
+       indicator, so removing it loses no accessibility signal: the
+       selected row's own left-border accent + tint (below) already
+       communicates which result is selected. */
+    border:                     0;
+}
+
+/* ---- element states -------------------------------------------------
+   Rofi's theming model crosses two independent axes per row:
+     - zebra striping:        normal   / alternate
+     - selection + urgency:   normal   / active   / urgent
+       (the first also has a "selected" counterpart: selected.normal,
+       selected.active, selected.urgent)
+   so there are 6 real combinations (normal.normal, normal.active,
+   normal.urgent, alternate.normal, alternate.active, alternate.urgent)
+   plus their 3 "selected" counterparts. Every combination is themed
+   explicitly below so none silently falls back to Rofi's own defaults. */
+
+element {
+    padding:                    12px 14px;
+    border-radius:              2px;
+    border:                     0px 0px 0px 3px;
+    border-color:               transparent;
+    text-color:                 @foreground;
+}
+
+/* Base rows: a near-imperceptible zebra (zebra vs. transparent), same
+   foreground either way — reads as one continuous editorial list, not a
+   stack of separate row-cards. */
+element normal.normal {
+    background-color:           transparent;
+    text-color:                 @foreground;
+}
+
+element alternate.normal {
+    background-color:           @zebra;
+    text-color:                 @foreground;
+}
+
+/* "active" (e.g. an already-open window in the window switcher) and
+   "urgent" both stay strictly monochrome — no accent, no red. */
+element normal.active {
+    background-color:           transparent;
+    text-color:                 @foreground-strong;
+}
+
+element alternate.active {
+    background-color:           @zebra;
+    text-color:                 @foreground-strong;
+}
+
+element normal.urgent {
+    background-color:           transparent;
+    text-color:                 @foreground-strong;
+}
+
+element alternate.urgent {
+    background-color:           @zebra;
+    text-color:                 @foreground-strong;
+}
+
+/* Selection, Ivory's own language: a quiet zebra-tint fill plus a thin
+   ink left-border accent — legible and unambiguous without the dark
+   theme's stark full-invert block. The accent only ever appears here, so
+   which row is selected is never in doubt. */
+element selected.normal,
+element selected.active,
+element selected.urgent {
+    background-color:           @zebra;
+    border-color:               @foreground-strong;
+    text-color:                 @foreground-strong;
+}
+
+element-text {
+    background-color:           inherit;
+    text-color:                 inherit;
+    vertical-align:             0.5;
+}
+
+element-icon {
+    size:                       18px;
+    padding:                    0 10px 0 0;
+}

@@ -76,6 +76,90 @@ percentages (`popin 96%`, `slidefade 8%`, `slidefadevert 8%` vs. the
 defaults' 94%/15%/12%) so every gesture reads as small, fast, and precise
 rather than cinematic.
 
+## Structure (v2 — structural pass)
+
+Ivory's mockup quadrant keeps the same bar position as arctic-glass and
+monochrome (a horizontal top bar — no dock), so its distinguishing
+structural trait isn't position, it's **density and restraint**: a
+noticeably thinner, quieter bar; a large main area with a small, single
+utility panel to the right; a launcher that is genuinely reinterpreted for
+a light, editorial register instead of a recolored copy of the dark
+launcher. Five new/changed structural override files implement this,
+using the v2 contract's `theme_file_or_shared` mechanism — every module,
+`on-click`, and `exec` is unchanged from the shared configs; only
+structure/geometry/CSS moved:
+
+- **`waybar/config.jsonc`** — height dropped from the shared 34px to
+  24px, margins grown from 8/14/14 to 16/32/32 (top/left/right), and
+  inter-module spacing raised from 4px to 10px. Net effect: a visibly
+  smaller bar sitting further from every screen edge than the shared
+  default or any of the other three themes (none of which override this
+  file, so they still run the shared 34px/8px-margin bar) — this makes
+  Ivory measurably the thinnest, most-inset bar of the five.
+- **`waybar/style.css`** — removed the filled capsule background from the
+  active-workspace indicator (the one place the shared style draws a
+  solid `background-color` block) and replaced it with a 2px underline;
+  all workspace buttons lost their `border-radius`/margin-driven pill
+  shape and now read as plain numerals in a row. Tray icon size and
+  spacing were both trimmed. The bar's own border was kept (a single
+  hairline in `border_inactive`-toned `@bar_border`) since the mockup
+  calls for "understated", not literally invisible.
+- **`rofi/config.rasi`** — reinterpreted the launcher in Ivory's own
+  register rather than recoloring the shared/dark one: window padding
+  28px (was 18px), mainbox spacing 18px (was 12px), listview spacing 8px
+  (was 3px) — real internal whitespace throughout. The search row lost
+  its rounded filled background and instead gets a single 1px hairline
+  rule along its bottom edge (`inputbar { border: 0 0 1px 0 }`), a
+  typography-led divider instead of a background-color block switch.
+  Selection no longer uses the dark themes' stark
+  `background-color: @foreground-strong` full-invert; it's now a quiet
+  `@zebra` tint plus a 3px ink left-border accent
+  (`element selected.* { border: 0 0 0 3px; border-color:
+  @foreground-strong }`) — legible and unambiguous (the accent bar only
+  ever appears on the selected row) without borrowing the dark launcher's
+  visual logic verbatim.
+- **`swaync/config.json`** — `control-center-width` reduced from the
+  shared 400px to 360px and margins grown (16/32 vs. 8/14), matching the
+  mockup's "small utility panel" — deliberately narrower than a
+  multi-card stack, not wider. Stays top-right (no repositioning needed;
+  Ivory keeps its top bar so the panel still needs to clear it, same as
+  the shared default's reasoning).
+- **`swaync/style.css`** — flatter corner radii (4px/3px/2px vs. the
+  shared 14px/11px/8px, an architectural rather than soft-glass language),
+  a hairline `border-bottom` under the panel title instead of a filled
+  header treatment, more generous notification-content padding
+  (14px/16px vs. 10px/12px), and title-bar/close/action buttons switched
+  from filled `@surface_alt` chips to plain text that only gains a
+  background on hover — quieter, typography-led hierarchy instead of a
+  cluster of buttons doing visual work. This avoids reading as "default
+  GTK light popup": proportion and a title rule carry the panel's
+  identity, not a stock shadow.
+- **`hyprlock.conf`** (reviewed, not net-new) — was a straight structural
+  copy of monochrome's centered-bold layout (same `halign/valign: center`
+  positions, 88px clock). Rebuilt as its own composition: a single
+  left-aligned column roughly a fifth of the way across the screen
+  (`position = 220, …`), leaving the rest of the screen as deliberate
+  open space, with a smaller 58px clock and a plain 2px-rounded,
+  thin-outlined input field instead of monochrome's bold 16px-rounded
+  centered pill — quiet/architectural instead of bold/graphic, per the
+  contract's explicit guidance for this theme. The `background` block
+  (blur/noise/contrast/brightness, all v1-approved geometry) is
+  unchanged.
+- **`hypr.lua` `layers` table** — not added. Ivory's Waybar stays anchored
+  top and its Rofi stays centered, so the v1 defaults
+  (`slide top` / `popin` / `slide right`) already match; nothing here
+  moved to a different screen edge that would need a different entrance
+  animation.
+
+**Grayscale-test read**: converted to grayscale, Ivory should still be
+identifiable purely from layout — the thinnest, most edge-inset bar of
+the five (no other theme overrides `waybar/config.jsonc`'s height/margin
+in this pass), a launcher with visibly more internal whitespace and a
+divider instead of a filled search block, a notably narrower control
+center than the shared 400px default, and a lock screen whose text sits
+in an off-center column rather than dead-center — density and proportion
+carry the identity, not the ivory/ink palette.
+
 ## Manual verification (real hardware only)
 
 This environment has no live Hyprland/lua/kitty/Waybar/Rofi/SwayNC — only
@@ -96,14 +180,22 @@ hyprctl configerrors   # expect: clean
   read as a light, subtle softening, not a heavy frosted-glass slab.
 - **Workspaces / special workspace**: `SUPER+1..0` / `SUPER+S` — short,
   fast slide+fade, clearly quicker/firmer than monochrome's.
-- **Rofi**: should look intentionally composed on ivory — thin borders,
-  ink text, a visible but restrained selection state — not "generic light
+- **Rofi**: should look intentionally composed on ivory — real internal
+  whitespace, a thin hairline dividing the search row from results
+  (not a filled search box), and a selected row shown by a quiet zebra
+  tint + thin ink left-border accent (not a solid dark-invert block) —
+  legible at a glance which row is selected, but never "generic light
   GTK".
 - **SwayNC**: control center should read as clean/editorial paper, not a
-  default light GTK panel — check the border/zebra restraint holds up on
-  a real notification list.
-- **Waybar**: should be the most minimalist of the four bars — light
-  background, ink text, thin border, no visual noise.
+  default light GTK panel — confirm the panel feels compact/self-contained
+  (360px wide, one panel, not a card stack), the title has a hairline rule
+  under it rather than a filled header, and the border/zebra restraint
+  holds up on a real notification list.
+- **Waybar**: should be the most minimalist of the five bars — noticeably
+  shorter (24px) and more inset from the screen edges than the other
+  themes' bars, workspace numbers shown as plain text with a thin
+  underline on the active one (no filled pill), light background, ink
+  text, thin border, no visual noise.
 - **Kitty**: confirm ivory background / ink foreground is legible at
   normal terminal font sizes and that the selection/cursor colors have
   enough contrast against `#F7F4EE`.
@@ -113,3 +205,8 @@ hyprctl configerrors   # expect: clean
   and `./apply.sh`).
 - **Border**: focus change should feel immediate; the ink `border_active`
   should read as a clear but thin edge, never heavy.
+- **Hyprlock**: `hyprlock` (or lock via the bound key) — clock/date/
+  password field should sit together in a single left-of-center column
+  with generous open space to the right, not centered on screen like
+  monochrome; the input field should read as a plain thin-outlined bar,
+  not a bold rounded pill.

@@ -1,0 +1,151 @@
+/* SwayNC structure — shape/layout only. Colors from colors.css.
+ *
+ * Structural override (v2): a compact, self-contained utility panel — the
+ * mockup's "small utility panel, right" — not a stack of multiple cards.
+ * Kept top-right per the shared default (this theme keeps its top bar),
+ * but narrower (see config.json), with a minimal border/shadow and
+ * editorial spacing/type hierarchy instead of a plain default-GTK-light
+ * look: a clear title rule, generous card padding, and no heavy stroke or
+ * drop shadow doing the "this is a panel" work — proportion does. */
+@import url("colors.css");
+
+* {
+  font-family: "JetBrainsMono Nerd Font", "Noto Sans", sans-serif;
+  font-size: 12px;
+}
+
+.control-center {
+  background-color: @bg;
+  border: 1px solid @border;
+  border-radius: 4px;
+  color: @fg;
+  padding: 4px;
+}
+
+/* SwayNC 0.12.6's own built-in "no notifications" placeholder — verified
+   directly against that version's source
+   (data/ui/notifications_widget.blp): a Box styled
+   "control-center-list-placeholder" containing a plain GtkImage with
+   `pixel-size: 96` set as a widget property, not through CSS.
+
+   That matters because it's exactly why the V3 attempt at this
+   (`-gtk-icon-size: 40px` on a guessed `.control-center > box > image`
+   selector) was inert on two counts: the selector's `>` direct-child
+   chain doesn't match the real widget tree (Stack -> StackPage -> Box ->
+   Image, several containers deeper than ".control-center"), and even with
+   a correct selector, GtkImage's own docs are explicit that an explicitly
+   set pixel-size always wins over the `-gtk-icon-size` CSS property — so
+   that property can never shrink this particular icon.
+
+   A CSS `transform: scale()` still can: it scales what's actually
+   painted, regardless of pixel-size. 96px * 0.4 ~= 38px, inside the
+   ~32-40px target. The negative margin claws back the vertical space GTK
+   still reserves for the icon's un-scaled 96px layout box (a transform is
+   paint-only and doesn't shrink that on its own), which is also what
+   keeps the empty state from feeling tall — not a separate fix. */
+.control-center-list-placeholder image {
+  transform: scale(0.4);
+  margin: -24px 0;
+}
+
+.notification-row {
+  padding: 8px 8px;
+}
+
+/* One clean card per notification, set apart from the panel behind it by
+   a hairline border only — no heavy shadow, proportion/padding carry the
+   "raised paper" read instead. */
+.notification-background,
+.floating-notifications .notification-background {
+  background: @surface;
+  border: 1px solid @border;
+  border-radius: 3px;
+  color: @fg;
+}
+
+.floating-notifications .notification-background {
+  /* Popups sit on bare desktop (no panel behind them), so they get a touch
+     more surface contrast than cards inside the control center. */
+  background: @surface_alt;
+}
+
+.notification-content {
+  padding: 14px 16px;
+}
+
+.summary {
+  color: @fg_strong;
+  font-weight: 600;
+}
+
+.body {
+  color: @muted;
+}
+
+/* Timestamps are the least important text on a notification — secondary
+   by size as well as color. */
+.time {
+  color: @subtle;
+  font-size: 0.85em;
+}
+
+/* A quiet rule under the title instead of a filled header bar — the
+   panel's one deliberate hierarchy cue. */
+.widget-title {
+  color: @fg_strong;
+  padding: 14px 18px 12px;
+  border-bottom: 1px solid @border;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.widget-title button {
+  background: transparent;
+  color: @muted;
+  border-radius: 2px;
+  transition: color 120ms ease-out;
+}
+
+.widget-title button:hover {
+  background: transparent;
+  color: @fg_strong;
+}
+
+.widget-dnd {
+  padding: 10px 18px 14px;
+  border-bottom: 1px solid @border;
+}
+
+.widget-dnd > switch {
+  background: @surface_alt;
+  border-radius: 10px;
+  transition: background-color 120ms ease-out;
+}
+
+.widget-dnd > switch:checked {
+  background: @fg_strong;
+}
+
+.close-button {
+  background: transparent;
+  color: @muted;
+  border-radius: 2px;
+  transition: color 120ms ease-out;
+}
+
+.close-button:hover {
+  background: transparent;
+  color: @fg_strong;
+}
+
+.notification-action {
+  background: @surface_alt;
+  color: @fg;
+  border-radius: 2px;
+  transition: background-color 120ms ease-out, color 120ms ease-out;
+}
+
+.notification-action:hover {
+  background: @fg_strong;
+  color: @bg;
+}
