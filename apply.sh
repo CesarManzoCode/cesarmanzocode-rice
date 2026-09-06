@@ -35,6 +35,11 @@ set -- "${POSITIONAL[@]+"${POSITIONAL[@]}"}"
 if [ -f "$STATE_FILE" ]; then
   # shellcheck source=/dev/null
   source "$STATE_FILE"
+  # Bring an older on-disk state.sh up to what this checkout expects
+  # (e.g. a component added after this install was first set up) before
+  # anything below reads SELECTED_COMPONENTS. Skipped for --dry-run's own
+  # explicit-args path (no THEME to migrate against yet in that branch).
+  migrate_state
 elif [ "$#" -lt 2 ]; then
   # No prior install.sh run to read theme/components from, and not enough
   # was given on the command line to fully stand in for it (this is the

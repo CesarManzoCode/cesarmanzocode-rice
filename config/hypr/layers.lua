@@ -38,11 +38,27 @@
   those would be new behavior nobody asked for in this pass.
 ]]
 
+--[[
+  `animation`, added this pass, is Hyprland's per-layer style override
+  (LAYER_RULE_EFFECT_ANIMATION in the real source) — it only overrides the
+  SHAPE (popin vs. slide, and which edge) for this one namespace; the
+  shared timing/curve still comes from the layersIn/Out (position/size) and
+  fadeLayersIn/Out (alpha) leaves in animations.lua. Verified against
+  source (src/desktop/view/animationControllers/LayerSurfaceAnimationController.cpp):
+  a style starting with "popin" takes an optional "NN%" target size, and a
+  style starting with "slide" takes an optional forced edge as its second
+  word (top/bottom/left/right) — "slide right" forces the surface in from
+  the right edge instead of the nearest-edge default.
+]]
+
 hl.layer_rule({
   name = "blur-rofi",
   match = { namespace = "^rofi$" },
   blur = true,
   ignore_alpha = 0.2,
+  -- Rofi is centered — a lateral slide makes no sense here. A tight popin
+  -- reads as an elegant, deliberate appearance instead.
+  animation = "popin 96%",
 })
 
 hl.layer_rule({
@@ -50,6 +66,10 @@ hl.layer_rule({
   match = { namespace = "^waybar$" },
   blur = true,
   ignore_alpha = 0.2,
+  -- Waybar stays mapped for the whole session; this only plays on the rare
+  -- occasions its layer surface is actually created/destroyed (startup,
+  -- reload), never during normal use — not a continuous/looping effect.
+  animation = "slide top",
 })
 
 hl.layer_rule({
@@ -61,6 +81,10 @@ hl.layer_rule({
   -- threshold needs to sit a bit further down to still catch it while
   -- still skipping the surrounding transparent fullscreen padding.
   ignore_alpha = 0.15,
+  -- The control center panel docks to the right edge of the screen, so it
+  -- should visibly travel in from the right rather than just fading/
+  -- popping in place.
+  animation = "slide right",
 })
 
 --[[

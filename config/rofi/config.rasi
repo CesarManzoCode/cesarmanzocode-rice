@@ -53,6 +53,17 @@ listview {
     spacing:                    3px;
     fixed-height:               false;
     scrollbar:                  false;
+    /* Rofi 2.0's own built-in default theme (doc/default_theme.rasi)
+       gives `listview` a `border: 2px dash 0px 0px` — a dashed line along
+       its top edge — that this file never overrode. It's a leftover
+       decorative separator from Rofi's stock theme, not a keyboard-focus
+       indicator (focus is drawn by the WM/compositor elsewhere, and this
+       widget has no separate focus state of its own), so removing it
+       loses no accessibility signal: the selected row's full
+       white-on-black fill (element selected.*, above) already
+       communicates which result is selected, on its own, with or without
+       this border. */
+    border:                     0;
 }
 
 /* ---- element states -------------------------------------------------
