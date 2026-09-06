@@ -1,0 +1,138 @@
+/* Waybar structure — spacing/shape only. Colors come from colors.css
+   (installed from the active theme), imported below.
+
+   arctic-glass structural override (see docs/themes/arctic-glass.md
+   "Structure"): every module/on-click/exec is identical to the shared
+   config/waybar/style.css — only spacing/weight changes, so the bar reads
+   as one small, airy glass card (the mockup's floating top bar) rather
+   than the denser strip monochrome and the other themes use. */
+@import url("colors.css");
+
+* {
+  font-family: "JetBrainsMono Nerd Font", "Noto Sans", sans-serif;
+  font-size: 13px;
+  min-height: 0;
+}
+
+window#waybar {
+  background: transparent;
+}
+
+#waybar {
+  background-color: @bar_bg;
+  /* Hairline border, not monochrome's flat 1px — a soft edge suits a
+     glass card better than a hard frame. */
+  border: 1px solid @bar_border;
+  border-radius: 16px;
+  color: @fg;
+  /* More side padding than monochrome's 10px — extra air before the first
+     and after the last module group, inside the card itself. */
+  padding: 0 20px;
+}
+
+#custom-launcher {
+  font-size: 16px;
+  padding: 0 16px 0 18px;
+  color: @fg_strong;
+}
+
+#workspaces {
+  /* Extra right padding opens a visible gap before the centered clock
+     group — "workspaces left-ish, clock centered" per the mockup, not
+     modules butted up against each other. */
+  padding: 0 18px 0 4px;
+}
+
+#workspaces button {
+  padding: 0 8px;
+  margin: 4px 3px;
+  border-radius: 8px;
+  color: @muted;
+  background: transparent;
+}
+
+/* Persistent/empty workspaces stay visible (this rice pins 5 of them) but
+   read as clearly inactive — same treatment either way, no color signal. */
+#workspaces button.empty,
+#workspaces button.persistent {
+  color: @subtle;
+}
+
+/* A workspace with windows on it but not focused. */
+#workspaces button.visible {
+  color: @fg;
+}
+
+#workspaces button.active {
+  background-color: @fg_strong;
+  color: @bg;
+}
+
+/* Urgent stays monochrome — a strong outline instead of red. */
+#workspaces button.urgent {
+  color: @fg_strong;
+  border: 1px solid @fg_strong;
+}
+
+#workspaces button.workspace-hover {
+  background-color: @surface_alt;
+  color: @fg_strong;
+}
+
+#clock {
+  font-weight: 600;
+  color: @fg_strong;
+  /* Wider than monochrome's 10px on both sides — opens a visible gap to
+     the status-icon group on the right, keeping the clock reading as its
+     own centered element rather than crowded against its neighbors. */
+  padding: 0 18px;
+}
+
+#pulseaudio,
+#network,
+#custom-cliphist,
+#tray,
+#custom-notification,
+#custom-power {
+  padding: 0 12px;
+  color: @fg;
+}
+
+/* Extra gap before the status-icon group starts, mirroring the workspace
+   group's extra gap on the left — the mockup's "lots of horizontal air"
+   between module groups, not just within them. */
+#pulseaudio {
+  padding-left: 18px;
+}
+
+/* DND is distinguished by weight, not color — swaync-client -swb reports
+   it via the "dnd-*" alt/class values. */
+#custom-notification.dnd,
+#custom-notification.dnd-none,
+#custom-notification.dnd-notification {
+  color: @fg_strong;
+}
+
+#custom-power {
+  color: @fg_strong;
+  padding-right: 14px;
+}
+
+#tray > .passive {
+  opacity: 0.6;
+}
+
+#pulseaudio.muted {
+  color: @subtle;
+}
+
+#network.disconnected {
+  color: @subtle;
+}
+
+tooltip {
+  background-color: @bar_bg;
+  border: 1px solid @bar_border;
+  border-radius: 10px;
+  color: @fg;
+}

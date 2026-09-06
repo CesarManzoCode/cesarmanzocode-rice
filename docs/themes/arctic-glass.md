@@ -97,6 +97,130 @@ Styles: `windows_popin="popin 96%"` (softer/less shrink than mono's 94%),
 `workspaces="slidefade 10%"` and `special_workspace="slidefadevert 8%"`
 (smaller displacement than mono's 15%/12% — a hint of drift, not a slide).
 
+## Structure
+
+Structural pass (v2 contract) — arctic-glass's quadrant of the approved
+4-panel mockup is "Arctic / Glass": a thin floating top bar with generous
+horizontal air, one large clean central area, and a secondary glass stack
+floating independently on the right made of visually distinct cards. This
+section documents exactly what was implemented and which optional
+override files carry it (`themes/arctic-glass/hypr.lua`'s `layers` table
+is intentionally NOT added — see below).
+
+### Waybar — `themes/arctic-glass/waybar/config.jsonc` + `style.css` (new)
+
+Arctic-glass is the one theme that keeps monochrome's basic top-bar
+orientation (the mockup's bar is floating and horizontal, not a dock), but
+it must look distinctly more "glass card floating in space." Both files
+are copies of the shared `config/waybar/*` with every module, `on-click`,
+and `exec` left untouched — only spacing/geometry changed:
+
+- `margin-top` 8→14, `margin-left`/`margin-right` 14→120 — far more
+  clearance from the screen edges than the shared bar, so the bar reads as
+  a compact floating card near the top of a mostly-empty canvas instead of
+  a wall-to-wall strip.
+- `spacing` 4→10 in the jsonc, plus CSS padding bumps (`#waybar` 10px→20px,
+  `#custom-launcher`, `#workspaces` right-padding, `#clock` 10px→18px,
+  status-icon group's first module) so there is real, visible daylight
+  between the left (launcher/workspaces), center (clock), and right
+  (status icons) module groups — the mockup's "generous horizontal spacing
+  between its module groups."
+- `border-radius` 12px→16px on `#waybar` and 8px→10px on tooltips — a
+  softer, more card-like shape to match the heavier corner rounding used
+  elsewhere in this theme (see geometry's `rounding=14` above).
+- No orientation change and no `layers` override: the bar still slides in
+  from the top exactly like the v1 default, since arctic-glass never
+  leaves the top edge.
+
+### Rofi — `themes/arctic-glass/rofi/config.rasi` (new)
+
+Copied from `config/rofi/config.rasi`; same `modi`/`display-drun`/entry
+behavior. Restructured to read as "ONE elegant floating glass panel,
+centered, clearly split into a search row + a results list, generous
+internal padding":
+
+- `window`: `width` 520px→600px, `padding` 18px→26px, `border-radius`
+  14px→18px — a wider, more generously padded panel.
+- `mainbox` `spacing` 12px→18px — a bigger gap between the search row and
+  the results list, so the two read as distinct sections of one panel.
+- `inputbar` gains its own `border: 1px; border-color: @border;` (the
+  shared file relies on `@surface`'s fill alone) plus roomier padding
+  (12/14px → 16/18px) and a rounder radius (9px→12px) — the search row now
+  reads as a clearly separate card from the list below it, not just a
+  slightly different fill color.
+- `listview` spacing 3px→6px and `element` padding 10/12px→12/16px with a
+  rounder radius (7px→9px) — more air between and inside result rows.
+- Still centered (`location`/`anchor: center`), so no `layers` override —
+  the v1 default `popin 96%` on Rofi's namespace already matches.
+
+### SwayNC — `themes/arctic-glass/swaync/config.json` + `style.css` (new)
+
+Stays docked top-right (`positionX/Y` unchanged), matching the mockup's
+right-side stack; `control-center-margin-top` 8→20 and `-margin-right`
+14→28 push it further from the screen edges for the same "floats with
+visible gaps" language as the rest of the theme.
+
+`style.css` restructures the panel from "one control-center shell with
+individually-carded notifications" (already true of the shared file) into
+a genuine stack of distinct floating cards, per the mockup's "could be
+composed of visually distinct sub-sections ... NOT a single flat dark
+rectangle":
+
+- `.widget-title` and `.widget-dnd` — previously bare text/controls sitting
+  directly on the outer shell's background — now each get their own
+  `@surface` fill, `1px @border`, `12px` radius, and a soft
+  `box-shadow: 0 4px 14px rgba(0,0,0,0.3)`, with margins separating them
+  from the shell edge and from each other. They now read as their own
+  small glass cards stacked above the notification list, exactly like the
+  mockup's "small widget card" panels.
+- `.notification-row` padding 6px→8px plus a new `margin: 3px 0` opens a
+  real vertical gap between stacked notification cards.
+- `.notification-background` (and its floating-popup variant) gains
+  `box-shadow: 0 6px 18px rgba(0,0,0,0.35)` and a rounder `11px→14px`
+  radius, so each notification visibly separates from the shell behind it
+  instead of reading as a listview row.
+- `.control-center` itself: radius 14px→18px, padding 8px→10px — a
+  slightly airier, quieter outer shell now that the sections inside it
+  carry their own surface contrast.
+- Same selectors as the shared file throughout (verified against SwayNC
+  0.12.6's real widget tree — see the `.control-center-list-placeholder`
+  comment retained from the shared file) — no functional/widget changes,
+  layout/depth only.
+- No `layers` override: SwayNC still docks right and slides in from the
+  right exactly like the v1 default.
+
+### Hyprlock — `themes/arctic-glass/hyprlock.conf` (restructured)
+
+The first pass gave arctic-glass its own colors but reused monochrome's
+exact centered clock/date/input column layout. This pass gives it its own
+composition: the clock (now `font_size=96`, up from 88) and date sit
+off-center to the upper-left (`halign: left`, positions `-260/-262, 60/-40`
+respectively) as one loosely-anchored "card" of text on a large quiet
+canvas, while the input field floats independently lower-right
+(`halign: right`, position `220, -160`) — real distance between the two
+groups instead of one stacked, dead-centered column. This echoes the
+floating-glass language (independent panels with real gaps, per the
+mockup) instead of monochrome's single centered stack. Same 3-block shape
+(`background`, two `label`s, one `input-field`) and the `@WALLPAPER@`
+placeholder as every theme.
+
+### `themes/arctic-glass/hypr.lua`'s `layers` table — intentionally omitted
+
+Waybar stays anchored to the top edge, Rofi stays centered, and SwayNC
+stays docked top-right — none of arctic-glass's v2 changes move any of
+these off their v1-default edge/anchor, so the v1 defaults
+(`slide top` / `popin 96%` / `slide right`) already match. No `layers`
+override was added to `hypr.lua`, per the contract's guidance not to add
+unnecessary overrides.
+
+### Grayscale test
+
+Bar position (floating top strip with wide margins, not a dock), Rofi's
+centered wide panel with a visibly bordered search row over a looser
+results list, and SwayNC's stack of individually-carded title/DND/
+notification sections on the right are all layout facts, not color facts
+— they should still identify this quadrant with color removed.
+
 ## Manual verification (real hardware only)
 
 Everything below passed static checks (`tests/check_all_themes.py`,
@@ -127,12 +251,24 @@ hyprctl configerrors   # expect: clean
 - **Rofi** (`SUPER+R`): should pop in centered as a deep, translucent
   glass panel — confirm the lower alpha (`0xB8`/`0xCC`) still reads as
   unmistakably a panel, not washed out or illegible against a bright
-  wallpaper region.
+  wallpaper region. Structurally, confirm the search row visibly reads as
+  its own bordered card above a looser, more spaced-out results list, not
+  one undifferentiated block.
 - **Waybar**: bar should read as clearly translucent (alpha `0.62`) with
-  real blur behind it, not a flat dark strip.
+  real blur behind it, not a flat dark strip. Structurally, confirm it
+  sits well clear of both screen edges (wide margins), and that the
+  workspaces/clock/status-icon groups have visibly more air between them
+  than a typical bar — it should read as a small floating card, not a
+  wall-to-wall strip.
 - **SwayNC**: control-center panel should feel refined and deep, not
   rough/flat — check the ice-blue accent shows only on interactive
-  elements, not as a wash across the whole panel.
+  elements, not as a wash across the whole panel. Structurally, confirm
+  the title bar, the DND toggle row, and each notification all read as
+  their own separate floating card (visible border + shadow + gap around
+  each), not as rows inside one flat panel.
+- **Hyprlock**: confirm the clock/date now sit off-center to the
+  upper-left and the password field floats independently lower-right,
+  distinctly different from monochrome's single centered column.
 - **Kitty**: cool palette should look good at the shared 0.82 background
   opacity over each wallpaper variant, especially `shard`/`horizon`.
 - **Brave**: install `themes/arctic-glass/brave/manifest.json` as an
