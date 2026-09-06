@@ -1,0 +1,9 @@
+/* monochrome — Rofi palette (visual layer only) */
+* {
+    background:         #050505F2;
+    surface:            #101010FF;
+    foreground:         #F4F4F4FF;
+    foreground-strong:  #FFFFFFFF;
+    muted:              #9A9A9AFF;
+    border:             #383838FF;
+}

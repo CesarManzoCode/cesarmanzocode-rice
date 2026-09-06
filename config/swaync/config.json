@@ -1,0 +1,27 @@
+{
+  "positionX": "right",
+  "positionY": "top",
+  "layer": "overlay",
+  "control-center-margin-top": 8,
+  "control-center-margin-right": 14,
+  "control-center-width": 400,
+  "notification-window-width": 380,
+  "timeout": 6,
+  "timeout-low": 3,
+  "timeout-critical": 0,
+  "fit-to-screen": true,
+  "control-center-layer": "top",
+  "layer-shell": true,
+  "hide-on-clear": true,
+  "widgets": [
+    "title",
+    "dnd",
+    "notifications"
+  ],
+  "widget-config": {
+    "title": {
+      "text": "Notifications",
+      "clear-all-button": true
+    }
+  }
+}

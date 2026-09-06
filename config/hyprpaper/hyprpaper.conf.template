@@ -1,0 +1,8 @@
+## hyprpaper — wallpaper engine, applied generically to every monitor.
+## @WALLPAPER@ is substituted by apply.sh with the installed wallpaper path.
+## No monitor name is ever hardcoded here.
+
+preload = @WALLPAPER@
+wallpaper = ,@WALLPAPER@
+splash = false
+ipc = on

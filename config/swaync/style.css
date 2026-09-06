@@ -1,0 +1,89 @@
+/* SwayNC structure — shape/layout only. Colors from colors.css. */
+@import url("colors.css");
+
+* {
+  font-family: "JetBrainsMono Nerd Font", "Noto Sans", sans-serif;
+  font-size: 13px;
+}
+
+.control-center {
+  background-color: @bg;
+  border: 1px solid @border;
+  border-radius: 12px;
+  color: @fg;
+}
+
+.notification-row {
+  padding: 4px;
+}
+
+.notification-background,
+.floating-notifications .notification-background {
+  background: @surface;
+  border: 1px solid @border;
+  border-radius: 10px;
+  color: @fg;
+}
+
+.notification-content {
+  padding: 8px;
+}
+
+.summary {
+  color: @fg_strong;
+  font-weight: 600;
+}
+
+.body {
+  color: @muted;
+}
+
+.time {
+  color: @subtle;
+}
+
+.widget-title {
+  color: @fg_strong;
+  padding: 10px 12px;
+}
+
+.widget-title button {
+  background: @surface_alt;
+  color: @fg;
+  border-radius: 8px;
+}
+
+.widget-dnd {
+  padding: 6px 12px;
+}
+
+.widget-dnd > switch {
+  background: @surface_alt;
+  border-radius: 10px;
+}
+
+.widget-dnd > switch:checked {
+  background: @fg_strong;
+}
+
+.close-button {
+  background: @surface_alt;
+  color: @fg;
+  border-radius: 8px;
+}
+
+.close-button:hover {
+  background: @fg_strong;
+  color: @bg;
+}
+
+.notification-action {
+  background: @surface_alt;
+  color: @fg;
+  border-radius: 8px;
+}
+
+.notification-action:hover {
+  background: @fg_strong;
+  color: @bg;
+}

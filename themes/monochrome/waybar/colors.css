@@ -1,0 +1,9 @@
+/* monochrome — Waybar palette (visual layer only) */
+@define-color bar_bg alpha(#0b0b0b, 0.85);
+@define-color bar_border #383838;
+@define-color bg #050505;
+@define-color surface_alt #181818;
+@define-color fg #f4f4f4;
+@define-color fg_strong #ffffff;
+@define-color muted #9a9a9a;
+@define-color subtle #555555;

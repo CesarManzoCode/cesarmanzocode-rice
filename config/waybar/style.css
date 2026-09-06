@@ -1,0 +1,88 @@
+/* Waybar structure — spacing/shape only. Colors come from colors.css
+   (installed from the active theme), imported below. */
+@import url("colors.css");
+
+* {
+  font-family: "JetBrainsMono Nerd Font", "Noto Sans", sans-serif;
+  font-size: 13px;
+  min-height: 0;
+}
+
+window#waybar {
+  background: transparent;
+}
+
+#waybar {
+  background-color: @bar_bg;
+  border: 1px solid @bar_border;
+  border-radius: 12px;
+  color: @fg;
+  padding: 0 10px;
+}
+
+#custom-launcher {
+  font-size: 16px;
+  padding: 0 12px 0 14px;
+  color: @fg_strong;
+}
+
+#workspaces {
+  padding: 0 4px;
+}
+
+#workspaces button {
+  padding: 0 8px;
+  margin: 4px 2px;
+  border-radius: 8px;
+  color: @muted;
+  background: transparent;
+}
+
+#workspaces button.active {
+  background-color: @fg_strong;
+  color: @bg;
+}
+
+#workspaces button.hover {
+  background-color: @surface_alt;
+  color: @fg_strong;
+}
+
+#clock {
+  font-weight: 600;
+  color: @fg_strong;
+  padding: 0 10px;
+}
+
+#pulseaudio,
+#network,
+#custom-cliphist,
+#tray,
+#custom-power {
+  padding: 0 10px;
+  color: @fg;
+}
+
+#custom-power {
+  color: @fg_strong;
+  padding-right: 14px;
+}
+
+#tray > .passive {
+  opacity: 0.6;
+}
+
+#pulseaudio.muted {
+  color: @subtle;
+}
+
+#network.disconnected {
+  color: @subtle;
+}
+
+tooltip {
+  background-color: @bar_bg;
+  border: 1px solid @bar_border;
+  border-radius: 8px;
+  color: @fg;
+}

@@ -1,0 +1,76 @@
+/* Rofi structure — layout only. Colors from the active theme's colors.rasi. */
+@import "colors.rasi"
+
+configuration {
+    modi:                       "drun,run";
+    show-icons:                 true;
+    icon-theme:                 "Papirus";
+    display-drun:               "Apps";
+    drun-display-format:        "{name}";
+    font:                       "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    width:                      480px;
+    location:                   center;
+    anchor:                     center;
+    padding:                    16px;
+    border:                     1px;
+    border-radius:              12px;
+    background-color:           @background;
+    border-color:               @border;
+}
+
+mainbox {
+    children:                   [ "inputbar", "listview" ];
+    spacing:                    10px;
+    background-color:           transparent;
+}
+
+inputbar {
+    padding:                    10px 12px;
+    border-radius:              8px;
+    background-color:           @surface;
+    text-color:                 @foreground;
+    children:                   [ "prompt", "entry" ];
+}
+
+prompt {
+    text-color:                 @muted;
+    padding:                    0 8px 0 0;
+}
+
+entry {
+    placeholder:                "Search…";
+    placeholder-color:          @muted;
+    text-color:                 @foreground;
+}
+
+listview {
+    lines:                      8;
+    spacing:                    4px;
+    fixed-height:               false;
+    scrollbar:                  false;
+}
+
+element {
+    padding:                    8px 10px;
+    border-radius:              8px;
+    text-color:                 @foreground;
+}
+
+element selected {
+    background-color:           @foreground-strong;
+    text-color:                 @background;
+}
+
+element-text {
+    background-color:           inherit;
+    text-color:                 inherit;
+    vertical-align:             0.5;
+}
+
+element-icon {
+    size:                       20px;
+    padding:                    0 10px 0 0;
+}
