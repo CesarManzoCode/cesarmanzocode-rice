@@ -1,0 +1,33 @@
+{
+  "manifest_version": 3,
+  "name": "cesarmanzocode-rice — violet-night",
+  "version": "1.0.0",
+  "description": "Violet-night browser-chrome theme (frame/toolbar/omnibox/tabs only — no web-content theming) matching this rice's Waybar/Kitty/Rofi/SwayNC palette.",
+  "theme": {
+    "colors": {
+      "frame": [16, 13, 29],
+      "frame_inactive": [10, 8, 18],
+
+      "toolbar": [30, 24, 54],
+      "toolbar_text": [231, 227, 246],
+      "toolbar_button_icon": [231, 227, 246],
+      "button_background": [22, 18, 42],
+
+      "omnibox_background": [22, 18, 42],
+      "omnibox_text": [231, 227, 246],
+
+      "tab_text": [246, 244, 255],
+      "background_tab": [16, 13, 29],
+      "background_tab_inactive": [10, 8, 18],
+      "tab_background_text": [140, 132, 173],
+      "tab_background_text_inactive": [140, 132, 173],
+
+      "bookmark_text": [231, 227, 246],
+
+      "ntp_background": [10, 8, 18],
+      "ntp_header": [16, 13, 29],
+      "ntp_link": [169, 112, 255],
+      "ntp_text": [231, 227, 246]
+    }
+  }
+}

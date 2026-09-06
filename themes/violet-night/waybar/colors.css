@@ -1,0 +1,14 @@
+/* violet-night — Waybar palette (visual layer only).
+   bar_bg kept low-alpha near-black-violet so the real layer blur
+   (namespace ^waybar$, see config/hypr/layers.lua) has something to show
+   through — reads as deep nocturnal glass, not a flat purple bar. Accent
+   reserved for module highlights/workspace indicators only. */
+@define-color bar_bg alpha(#100d1d, 0.72);
+@define-color bar_border #342b52;
+@define-color bg #0a0812;
+@define-color surface_alt #1e1836;
+@define-color fg #e7e3f6;
+@define-color fg_strong #f6f4ff;
+@define-color muted #8c84ad;
+@define-color subtle #463d66;
+@define-color accent #a970ff;

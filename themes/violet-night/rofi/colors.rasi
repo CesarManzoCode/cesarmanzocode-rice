@@ -1,0 +1,20 @@
+/* violet-night — Rofi palette (visual layer only).
+   Lower alpha than monochrome so the compositor's own layer blur
+   (config/hypr/layers.lua, namespace ^rofi$) — already tuned stronger for
+   this theme in hypr.lua's geometry — reads as real depth: a dark violet
+   pane you can feel is floating, never a light/glassy or gaudy panel.
+   Accent is the one deliberately bright color in the whole file. */
+* {
+    background:         #0A0812CC;
+    surface:            #1E1836E0;
+    foreground:         #E7E3F6FF;
+    foreground-strong:  #F6F4FFFF;
+    muted:              #8C84ADFF;
+    border:             #342B52FF;
+    accent:             #A970FFFF;
+    /* Zebra striping only — deliberately lower alpha than @surface so the
+       list still reads as one continuous dark-violet surface with a
+       single strong element (the accent-highlighted selection), not a
+       stack of separate row-cards. */
+    zebra:              #1E183690;
+}

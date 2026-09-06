@@ -1,0 +1,14 @@
+/* violet-night — SwayNC palette (visual layer only).
+   bg alpha kept low (real layer blur, namespace
+   ^swaync-control-center$, confined to the panel via ignore_alpha) for a
+   more dramatic, layered control-center than monochrome — still legible:
+   surfaces/fg stay high-contrast even though the backdrop is translucent. */
+@define-color bg rgba(10, 8, 18, 0.7);
+@define-color surface #16122a;
+@define-color surface_alt #1e1836;
+@define-color border #342b52;
+@define-color fg #e7e3f6;
+@define-color fg_strong #f6f4ff;
+@define-color muted #8c84ad;
+@define-color subtle #463d66;
+@define-color accent #a970ff;
