@@ -246,5 +246,28 @@ if [ "${WANT[kitty]:-0}" = "1" ]; then
   ok "kitty installed"
 fi
 
+# ---- brave (browser-chrome theme; NOT auto-loaded, see README) -----------
+#
+# A Chromium/Brave theme is a manifest-only, unpacked extension — Brave has
+# no CLI/API to load one into a running profile, and this rice deliberately
+# never touches ~/.config/BraveSoftware/ (no Preferences edit, no policy,
+# no writing into the profile at all). So this only stages the theme files
+# at a stable location outside any browser profile; loading it into Brave
+# (brave://extensions -> Developer mode -> Load unpacked) stays a one-time
+# manual step for the user, documented in the README.
+
+if [ "${WANT[brave]:-0}" = "1" ]; then
+  info "brave"
+  BRAVE_SRC="$REPO_ROOT/themes/$THEME/brave/manifest.json"
+  if [ ! -f "$BRAVE_SRC" ]; then
+    warn "theme '$THEME' has no brave/manifest.json — skipping brave theme"
+  else
+    manifest_reset brave
+    BRAVE_DST="$XDG_DATA_HOME/cesarmanzocode-rice/brave/$THEME/manifest.json"
+    install_pair brave "$BRAVE_SRC" "$BRAVE_DST"
+    ok "brave theme staged at $(dirname "$BRAVE_DST") — load it manually, see README"
+  fi
+fi
+
 echo
 ok "apply.sh finished (theme: $THEME)"
