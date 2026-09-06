@@ -75,24 +75,24 @@ hl.curve("linear", { type = "bezier", points = { {0, 0}, {1, 1} } })
 
 -- windowSpring: window open. critical damping ~= 2*sqrt(310) ~= 35.2;
 -- damping 31 -> ratio ~0.88 — a few px of material overshoot, not jelly.
-hl.curve("windowSpring", { type = "spring", mass = 1, stiffness = 310, damping = 31 })
+hl.curve("windowSpring", { type = "spring", mass = 1, stiffness = 310, dampening = 31 })
 
 -- workspaceSpring: workspace switch. critical ~= 2*sqrt(250) ~= 31.6;
 -- damping 27 -> ratio ~0.85.
-hl.curve("workspaceSpring", { type = "spring", mass = 1, stiffness = 250, damping = 27 })
+hl.curve("workspaceSpring", { type = "spring", mass = 1, stiffness = 250, dampening = 27 })
 
 -- layerSpring: layer-shell surfaces (Rofi, notifications, popups) that
 -- opt into a spring via their own layer_rule animation style. critical
 -- ~= 2*sqrt(330) ~= 36.3; damping 33 -> ratio ~0.91 — the most "solid"/
 -- least-overshoot spring of the set, matching a menu that must never feel
 -- squishy.
-hl.curve("layerSpring", { type = "spring", mass = 1, stiffness = 330, damping = 33 })
+hl.curve("layerSpring", { type = "spring", mass = 1, stiffness = 330, dampening = 33 })
 
 -- specialWorkspaceSpring: deliberately a little less damped than
 -- workspaceSpring so the special workspace reads as a distinct, slightly
 -- more energetic gesture — but still nowhere near an obvious bounce.
 -- critical ~= 2*sqrt(250) ~= 31.6; damping 23 -> ratio ~0.73.
-hl.curve("specialWorkspaceSpring", { type = "spring", mass = 1, stiffness = 250, damping = 23 })
+hl.curve("specialWorkspaceSpring", { type = "spring", mass = 1, stiffness = 250, dampening = 23 })
 
 -- ---- windows ---------------------------------------------------------------
 -- Opening: a precise, small pop-in on windowSpring — the window should
