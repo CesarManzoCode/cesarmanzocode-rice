@@ -123,12 +123,6 @@ if [ "${WANT[hypr]:-0}" = "1" ]; then
   fi
   ok "hyprland.lua + runtime modules installed"
 
-  # polkit rides along with hypr (see install.sh); enable its service iff
-  # user.lua actually selected it.
-  if component_enabled polkit; then
-    rice_enable_service "hyprpolkitagent.service"
-  fi
-
   # Verify + fail safe — only meaningful with a live Hyprland session.
   if [ "$DRY_RUN" = "0" ] && command -v hyprctl >/dev/null 2>&1 && hyprctl -j monitors >/dev/null 2>&1; then
     hyprctl reload >/dev/null 2>&1 || true
@@ -144,6 +138,15 @@ if [ "${WANT[hypr]:-0}" = "1" ]; then
       die "Aborted: new Hyprland config has errors. Previous config restored where a backup existed."
     fi
     ok "hyprctl configerrors clean"
+  fi
+
+  # polkit rides along with hypr (see install.sh); enable its service iff
+  # user.lua actually selected it. This runs only after the block above
+  # has proven the new config loads clean (or been skipped outright, e.g.
+  # no live Hyprland session on a TTY/container) — never as a side effect
+  # of an apply that then gets aborted and rolled back.
+  if component_enabled polkit; then
+    rice_enable_service "hyprpolkitagent.service"
   fi
 fi
 

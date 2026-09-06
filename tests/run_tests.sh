@@ -53,6 +53,14 @@ else
   echo "  (lua not installed, skipping — not required at runtime any more)"
 fi
 
+echo "== lua runtime shape (mock hl.bind/hl.window_rule catch what loadfile() can't) =="
+if command -v lua >/dev/null 2>&1; then
+  check "binds.lua/windows.lua produce hl.bind/hl.window_rule shapes Hyprland 0.56 accepts" \
+    lua tests/lua/check_binds_and_windows.lua
+else
+  echo "  (lua not installed, skipping)"
+fi
+
 echo "== no machine-specific hardcoding outside documented examples =="
 check_no_hardcode() {
   local pattern="$1"

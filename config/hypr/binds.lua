@@ -24,11 +24,20 @@ local function bindspec(b, fallback_mods, fallback_key)
   return fallback_mods, fallback_key
 end
 
--- hl.bind() takes keys as one "MODS + KEY" string; bare key (no mods) for
--- things like XF86 media keys.
+-- hl.bind() takes keys as one "MODS + KEY" string, with each modifier
+-- separated from the next (and from the key) by its own " + " — Hyprland
+-- 0.56's parser rejects a combined "SUPER SHIFT" token, requiring
+-- "SUPER + SHIFT" instead. mods here may be stored (per user.lua schema)
+-- as whitespace- and/or "+"-separated, e.g. "SUPER SHIFT" or "SUPER+SHIFT",
+-- so tokenize on both and rejoin with " + ".
 local function keystr(mods, key)
   if mods == nil or mods == "" then return key end
-  return mods .. " + " .. key
+  local tokens = {}
+  for token in mods:gmatch("[^%s+]+") do
+    tokens[#tokens + 1] = token
+  end
+  if #tokens == 0 then return key end
+  return table.concat(tokens, " + ") .. " + " .. key
 end
 
 local SPECIAL_NAME = "magic"
