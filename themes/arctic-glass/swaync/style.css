@@ -1,0 +1,173 @@
+/* SwayNC structure — shape/layout only. Colors from colors.css.
+
+   arctic-glass structural override (see docs/themes/arctic-glass.md
+   "Structure"): the mockup wants the right-side stack to read as
+   "composed of visually distinct sub-sections ... NOT a single flat dark
+   rectangle." The shared config/swaync/style.css already gives individual
+   notifications a card treatment; this override goes further and gives
+   the title bar and the DND row their own glass cards too, with real
+   margins/shadows between every section, so the whole control center
+   reads as a loose vertical stack of independent cards rather than one
+   panel with internal dividers. Same selectors/classes as the shared
+   file (verified against SwayNC 0.12.6's real widget tree, see the
+   .control-center-list-placeholder note below) — only spacing/backgrounds/
+   shadows change. */
+@import url("colors.css");
+
+* {
+  font-family: "JetBrainsMono Nerd Font", "Noto Sans", sans-serif;
+  font-size: 13px;
+}
+
+.control-center {
+  /* The outer shell is now a quieter, more transparent backdrop — the
+     individual cards below (title/dnd/notifications) carry the visible
+     surface contrast, not this outer frame. */
+  background-color: @bg;
+  border: 1px solid @border;
+  border-radius: 18px;
+  color: @fg;
+  padding: 10px;
+}
+
+/* SwayNC 0.12.6's own built-in "no notifications" placeholder — verified
+   directly against that version's source
+   (data/ui/notifications_widget.blp): a Box styled
+   "control-center-list-placeholder" containing a plain GtkImage with
+   `pixel-size: 96` set as a widget property, not through CSS.
+
+   That matters because it's exactly why the V3 attempt at this
+   (`-gtk-icon-size: 40px` on a guessed `.control-center > box > image`
+   selector) was inert on two counts: the selector's `>` direct-child
+   chain doesn't match the real widget tree (Stack -> StackPage -> Box ->
+   Image, several containers deeper than ".control-center"), and even with
+   a correct selector, GtkImage's own docs are explicit that an explicitly
+   set pixel-size always wins over the `-gtk-icon-size` CSS property — so
+   that property can never shrink this particular icon.
+
+   A CSS `transform: scale()` still can: it scales what's actually
+   painted, regardless of pixel-size. 96px * 0.4 ~= 38px, inside the
+   ~32-40px target. The negative margin claws back the vertical space GTK
+   still reserves for the icon's un-scaled 96px layout box (a transform is
+   paint-only and doesn't shrink that on its own), which is also what
+   keeps the empty state from feeling tall — not a separate fix. */
+.control-center-list-placeholder image {
+  transform: scale(0.4);
+  margin: -24px 0;
+}
+
+.notification-row {
+  /* Real vertical gap between stacked notification cards (up from the
+     shared 6px) — each one should read as floating independently, not
+     touching its neighbor. */
+  padding: 8px 4px;
+  margin: 3px 0;
+}
+
+/* Depth comes from a slightly lighter surface + a fine border + a soft
+   shadow, not color — each card should read as its own floating glass
+   piece sitting above the translucent shell (which itself sits above the
+   blurred wallpaper), not a row inside one flat panel. */
+.notification-background,
+.floating-notifications .notification-background {
+  background: @surface;
+  border: 1px solid @border;
+  border-radius: 14px;
+  color: @fg;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+}
+
+.floating-notifications .notification-background {
+  /* Popups sit on bare desktop (no panel behind them), so they get a touch
+     more surface contrast than cards inside the control center. */
+  background: @surface_alt;
+}
+
+.notification-content {
+  padding: 12px 14px;
+}
+
+.summary {
+  color: @fg_strong;
+  font-weight: 600;
+}
+
+.body {
+  color: @muted;
+}
+
+/* Timestamps are the least important text on a notification — secondary
+   by size as well as color. */
+.time {
+  color: @subtle;
+  font-size: 0.9em;
+}
+
+/* Title and DND get their own card each — a small glass strip sitting
+   above the notification stack, not text/controls floating loose on the
+   outer shell's background. */
+.widget-title {
+  background: @surface;
+  border: 1px solid @border;
+  border-radius: 12px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+  color: @fg_strong;
+  padding: 12px 16px;
+  margin: 2px 2px 6px;
+  font-weight: 600;
+}
+
+.widget-title button {
+  background: @surface_alt;
+  color: @fg;
+  border-radius: 8px;
+  transition: background-color 120ms ease-out, color 120ms ease-out;
+}
+
+.widget-title button:hover {
+  background: @fg_strong;
+  color: @bg;
+}
+
+.widget-dnd {
+  background: @surface;
+  border: 1px solid @border;
+  border-radius: 12px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+  padding: 10px 16px;
+  margin: 0 2px 8px;
+}
+
+.widget-dnd > switch {
+  background: @surface_alt;
+  border-radius: 10px;
+  transition: background-color 120ms ease-out;
+}
+
+.widget-dnd > switch:checked {
+  background: @fg_strong;
+}
+
+.close-button {
+  background: @surface_alt;
+  color: @fg;
+  border-radius: 8px;
+  transition: background-color 120ms ease-out, color 120ms ease-out;
+}
+
+.close-button:hover {
+  background: @fg_strong;
+  color: @bg;
+}
+
+.notification-action {
+  background: @surface_alt;
+  color: @fg;
+  border-radius: 8px;
+  transition: background-color 120ms ease-out, color 120ms ease-out;
+}
+
+.notification-action:hover {
+  background: @fg_strong;
+  color: @bg;
+}
