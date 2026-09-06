@@ -1,0 +1,12 @@
+/* ivory-paper — SwayNC palette (visual layer only).
+   High-alpha warm-ivory panel with ink text and a thin border — explicitly
+   not GTK-default-light: no pure white, no default blue accent, no hard
+   black text, just paper + ink. */
+@define-color bg rgba(247, 244, 238, 0.97);
+@define-color surface #fbf9f4;
+@define-color surface_alt #f1ece2;
+@define-color border #ddd6c7;
+@define-color fg #262319;
+@define-color fg_strong #141210;
+@define-color muted #8d8574;
+@define-color subtle #c7bfae;

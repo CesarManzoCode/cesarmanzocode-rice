@@ -1,0 +1,17 @@
+/* ivory-paper — Rofi palette (visual layer only).
+   Kept near-opaque (high alpha) rather than glassy: on a light background
+   a translucent panel reads as muddy/gray, so this theme leans on a
+   crisp paper-white surface with ink text and a thin warm-gray border. */
+* {
+    background:         #F7F4EEF7;
+    surface:            #FBF9F4FA;
+    foreground:         #262319FF;
+    foreground-strong:  #141210FF;
+    muted:              #8D8574FF;
+    border:             #DDD6C7FF;
+    /* Zebra striping only — a whisper of warm gray beneath @surface's
+       search bar, same division of labor as monochrome: one continuous
+       surface with a single strong element (the selection), not a stack
+       of separate row-cards. */
+    zebra:              #F1ECE299;
+}
