@@ -1,224 +1,195 @@
-# Theme authoring contract
+# Theme authoring contract (v2 — structural pass)
 
-This is the exact, self-contained contract a new theme must satisfy in
-this repo. It exists so a theme can be built in isolation (its own
-branch/worktree) without touching shared code, and so
-`tests/check_all_themes.py` validates it automatically.
+This supersedes the v1 contract used for the first pass. The palette/
+geometry/motion/wallpaper contract from v1 is UNCHANGED and still applies
+(see below) — this version adds the STRUCTURAL override mechanism that
+lets a theme's actual shell layout (bar position, launcher composition,
+notification panel placement) differ, not just its colors.
 
-**Scope discipline: touch ONLY the files listed under "Files you own"
-below for your theme's slug. Never edit anything under `config/`,
+**Scope discipline is unchanged: touch ONLY the files listed under "Files
+you own" for your theme's slug. Never edit anything shared** — `config/`,
 `scripts/lib/`, `install.sh`, `apply.sh`, `uninstall.sh`,
 `tests/run_tests.sh`, `tests/check_all_themes.py`,
-`scripts/dev/wallpaper_lib.py`, or another theme's directory.** All of
-that is shared foundation, already done; if you think it's genuinely
-missing something, say so in your final report instead of changing it.
+`scripts/dev/wallpaper_lib.py`, `config/hypr/layers.lua`,
+`config/hypr/animations.lua`, or another theme's directory. All shared
+mechanics already exist; if something is genuinely missing, say so in
+your report instead of changing shared files.
+
+## THE MOCKUP IS THE SPEC, NOT INSPIRATION
+
+You were given (in your task prompt) the exact composition for your
+theme's quadrant of an approved 4-panel mockup image. That composition —
+bar position and orientation, where the "main area" sits, where secondary
+panels/stacks sit, how much whitespace there is — is a literal
+requirement, not a mood reference. Your job is to make Waybar/Rofi/
+SwayNC/Hyprland/Kitty/Brave/Hyprlock reproduce that composition as
+faithfully as real components allow. Where something literally cannot be
+reproduced (there is no such thing as a fake chat app, a fake code editor,
+a fake music player in this rice — never build one), adapt while
+preserving: composition, hierarchy, geometry, density, spatial direction,
+visual language. Never substitute "a different but thematically similar"
+layout for the one you were given.
+
+**The grayscale test**: if you screenshotted your theme applied and
+converted it to grayscale, someone who has seen the mockup should still
+be able to tell which quadrant it is, from layout alone — bar position,
+launcher shape/anchor, notification panel placement, density, gaps. If
+color is doing all the identity work, you are not done.
 
 ## Files you own (replace `<slug>` with your theme's name)
 
+Same as v1, PLUS four new optional structural files:
+
 ```
-themes/<slug>/hypr.lua                       # colors + geometry (+ optional motion)
-themes/<slug>/waybar/colors.css
-themes/<slug>/rofi/colors.rasi
-themes/<slug>/swaync/colors.css
+themes/<slug>/hypr.lua                       # colors + geometry + optional motion + optional layers
+themes/<slug>/waybar/colors.css              # required
+themes/<slug>/waybar/config.jsonc            # OPTIONAL — bar structure override (NEW)
+themes/<slug>/waybar/style.css               # OPTIONAL — bar layout/CSS override (NEW)
+themes/<slug>/rofi/colors.rasi               # required
+themes/<slug>/rofi/config.rasi               # OPTIONAL — launcher structure override (NEW)
+themes/<slug>/swaync/colors.css              # required
+themes/<slug>/swaync/config.json             # OPTIONAL — panel position/geometry override (NEW)
+themes/<slug>/swaync/style.css               # OPTIONAL — panel layout/CSS override (NEW)
 themes/<slug>/kitty/colors.conf
-themes/<slug>/hyprlock.conf
+themes/<slug>/hyprlock.conf                  # give it YOUR theme's own composition, not monochrome's relabeled
 themes/<slug>/brave/manifest.json
-scripts/dev/generate_wallpaper_<slug>.py     # dev-time only, see below
-wallpapers/<slug>.png                        # canonical default (byte-identical copy of one variant)
-wallpapers/<slug>-<variant1>.png             # >= 3 variants total
-wallpapers/<slug>-<variant2>.png
-wallpapers/<slug>-<variant3>.png
-docs/themes/<slug>.md                        # identity, palette, motion, manual QA checklist
+scripts/dev/generate_wallpaper_<slug>.py     # dev-time only — reuse the existing wallpapers unless your
+                                              #   composition genuinely requires new ones (see below)
+docs/themes/<slug>.md                        # identity, palette, motion, STRUCTURE, manual QA checklist
 ```
 
-Use `themes/monochrome/*` as your working reference for shape/format —
-copy its structure, never its actual colors/values (this theme must look
-and feel different, not just be monochrome relabeled).
+**How the optional overrides work** (`apply.sh`, via
+`scripts/lib/common.sh`'s `theme_file_or_shared`): if
+`themes/<slug>/waybar/config.jsonc` exists, it is installed instead of
+the shared `config/waybar/config.jsonc` — same for `waybar/style.css`,
+`rofi/config.rasi`, `swaync/config.json`, `swaync/style.css`. Omit any of
+these and the shared default is used for that file. **You almost
+certainly need at least `waybar/config.jsonc` and `waybar/style.css`** to
+get a non-top-bar layout (vertical dock/rail) — the shared one is a fixed
+horizontal top bar and cannot become vertical via colors alone. Copy the
+shared file as your starting point (`config/waybar/config.jsonc` etc.)
+and restructure from there — keep every existing module (launcher,
+workspaces, clock, pulseaudio, network, cliphist, tray, notification,
+power) present and wired to the same `on-click`/`exec` commands; you are
+changing layout/orientation/grouping, never functionality, app choices,
+or binds.
 
-## `themes/<slug>/hypr.lua`
+Waybar's `"orientation"` config key and `"position": "left"|"right"|"top"`
+control vertical vs. horizontal bars; a vertical bar typically needs
+`modules-left`/`modules-right` renamed to a single ordered `modules`-style
+column (check Waybar's own docs/examples for the exact vertical-bar
+module-list keys on this version) and CSS written for a narrow, tall
+`window#waybar` instead of a wide, short one.
 
-Same shape as `themes/monochrome/hypr.lua`. Required top-level keys:
+Rofi's `window { location; anchor; }` control on-screen placement — e.g.
+`location: west; anchor: west;` docks it to the left edge instead of
+center. SwayNC's `config.json` has `positionX`/`positionY`,
+`control-center-margin-*`, `control-center-width` — use these to place/
+size the panel to match your composition and to avoid overlapping your
+theme's own Waybar placement (e.g. a left-dock theme can use a small
+`control-center-margin-top` since there's no top bar to clear; a
+top-bar theme needs enough margin to clear it).
+
+## `themes/<slug>/hypr.lua`: optional `layers` table (NEW)
+
+If your theme's Waybar/Rofi don't enter from their v1-default edge
+(Rofi popin center, Waybar slide from top, SwayNC slide from right), add
+only the overrides you need — `config/hypr/layers.lua` reads these with
+the v1 defaults as fallback, so omit anything unchanged:
 
 ```lua
-return {
-  name = "<slug>",   -- must equal your theme's directory name exactly
-
-  colors = {
-    background, background_alt, surface, surface_alt,
-    foreground, foreground_strong, muted, subtle,
-    border_inactive, border_active, accent,   -- all required, hex strings without '#'
-  },
-
-  geometry = {
-    border_size, gaps_in, gaps_out, rounding,           -- required
-    rounding_power,                                      -- optional (see monochrome's comment on it)
-    blur_enabled, blur_size, blur_passes,                -- required
-    blur_noise, blur_contrast, blur_brightness,          -- required
-    blur_vibrancy, blur_vibrancy_darkness,               -- required (0 is a valid/common value)
-    shadow_enabled, active_opacity, inactive_opacity,    -- required
-  },
-
-  -- OPTIONAL: only set the sub-keys you actually want to differ from
-  -- monochrome's hardcoded defaults (see config/hypr/animations.lua for
-  -- what each default is). Omit any field/sub-table you don't need to
-  -- change — you do not have to specify all of them.
-  motion = {
-    springs = {
-      window            = { stiffness = ..., damping = ... },
-      workspace         = { stiffness = ..., damping = ... },
-      layer             = { stiffness = ..., damping = ... },
-      special_workspace = { stiffness = ..., damping = ... },
-    },
-    speeds = {
-      windows, windows_in, windows_out, windows_move,
-      layers_in, layers_out, fade_in, fade_out,
-      workspaces, special_workspace, border,
-    },
-    styles = {
-      windows_popin, workspaces, special_workspace,   -- e.g. "popin 92%", "slidefade 12%"
-    },
-  },
-
-  wallpaper = "wallpapers/<slug>.png",
-}
+layers = {
+  waybar = { animation = "slide left" },   -- for a left dock, e.g.
+  rofi   = { animation = "slide left" },   -- if Rofi isn't centered
+  swaync = { animation = "slide right" },  -- override only if you actually reposition it
+},
 ```
 
-`tests/check_all_themes.py` checks that every required `colors`/`geometry`
-key is present and that `name`/`wallpaper` match your slug — it does NOT
-police specific values (that's your judgment call per the visual brief
-you were given), only structural completeness.
+Never change the `match.namespace` values (they're verified against
+real `hyprctl layers` output and stay `^waybar$` / `^rofi$` /
+`^swaync-control-center$` regardless of theme) — only `animation`/
+`ignore_alpha` are theme-overridable, and only via this table, never by
+editing `layers.lua` itself.
 
-Springs: `mass` is always 1 (fixed elsewhere). Pick `stiffness`/`damping`
-so the damping ratio (`damping / (2*sqrt(stiffness*mass))`) sits in
-roughly 0.7-0.95 — at most a barely-perceptible overshoot, never a
-repeating wobble/bounce. A lower ratio (more underdamped) reads as more
-"alive"/expressive; near 0.95 reads as firm/precise.
+## Everything else from v1 is unchanged — still required
 
-## Per-component color/CSS/rasi files
+- `hypr.lua`'s `colors`/`geometry`/optional `motion` tables: same schema
+  as before (see `tests/check_all_themes.py` for the exact required
+  keys). Use `themes/monochrome/hypr.lua` as the structural reference for
+  shape, never for values.
+- Wallpapers: the existing packs from the first pass
+  (`wallpapers/<slug>-*.png` + canonical `wallpapers/<slug>.png`,
+  generated by `scripts/dev/generate_wallpaper_<slug>.py`) already exist
+  and were approved — **do not regenerate them** unless your theme's
+  composition literally requires a different aspect/quiet-zone layout
+  (e.g. a vertical dock changes where the "quiet zone" should sit — the
+  `Canvas` in `scripts/dev/wallpaper_lib.py` dims a top strip + a
+  centered box by default; if your bar is now a side dock, consider
+  passing different quiet-zone geometry or accept the existing wallpaper
+  as close enough). If you do touch a generator, keep it fully backward
+  compatible (same CLI, same determinism) and regenerate + commit the
+  PNGs.
+- Brave manifest schema: unchanged (manifest_version 3, `theme.colors`
+  only, documented Chromium keys only, no JS/permissions/content
+  scripts). Revisit only the actual color VALUES if your composition
+  brief calls for a different frame/toolbar mood — do not change the
+  file's shape.
+- `docs/themes/<slug>.md`: keep the v1 content (identity/palette/
+  wallpaper/motion/manual QA) and ADD a "Structure" section describing
+  the composition you implemented (bar position/orientation, launcher
+  anchor, notification panel placement) and exactly which optional
+  override files you added and why.
 
-Copy `themes/monochrome/{waybar,rofi,swaync,kitty}/...` and
-`themes/monochrome/hyprlock.conf` structurally (same selectors/keys/
-variables), replacing only the actual color values and any
-theme-specific numeric tuning called out in your visual brief (e.g.
-opacity/alpha, blur amounts already live in `hypr.lua`'s `geometry`, not
-here — these files are palette only, same division of labor monochrome
-already uses). Never touch `config/waybar/config.jsonc`,
-`config/waybar/style.css`, `config/rofi/config.rasi`,
-`config/swaync/config.json`, `config/swaync/style.css`,
-`config/kitty/kitty.conf` (the shared, theme-agnostic component
-configs) — only your theme's own `colors.css`/`colors.rasi`/
-`colors.conf`/`hyprlock.conf`.
+## Hyprlock composition (NEW emphasis)
 
-`hyprlock.conf`: same structure as monochrome's (background block with
-`path = @WALLPAPER@`, two labels, one input-field) — `apply.sh` replaces
-`@WALLPAPER@` for you; keep the placeholder literally as `@WALLPAPER@`.
+Give your theme's `hyprlock.conf` its own composition, not monochrome's
+relabeled — e.g. different label position/alignment, input-field
+position/size/anchor, sizing that matches your theme's density (Ivory:
+more whitespace, smaller/quieter type; Ember: tighter, more centered/
+industrial; Arctic: airy, could shift elements to echo the floating-glass
+language; Violet: could feel more cinematic/off-center). Keep the same
+three blocks (`background`, two `label`s, one `input-field`) and the
+`@WALLPAPER@` placeholder — restructure position/size/alignment/type
+choices within that shape.
 
-## `themes/<slug>/brave/manifest.json`
+## No fake apps
 
-Copy `themes/monochrome/brave/manifest.json`'s exact shape
-(`manifest_version: 3`, `theme.colors` only, no `permissions` /
-`host_permissions` / `content_scripts` / `background`), and use ONLY
-these documented Chromium `theme.colors` keys (verified against
-`chrome/browser/themes/browser_theme_pack.cc`'s
-`kOverwritableColorTable`):
-
-```
-background_tab, background_tab_inactive,
-background_tab_incognito, background_tab_incognito_inactive,
-bookmark_text, button_background,
-frame, frame_inactive, frame_incognito, frame_incognito_inactive,
-ntp_background, ntp_header, ntp_link, ntp_text,
-omnibox_background, omnibox_text,
-tab_background_text, tab_background_text_inactive,
-tab_background_text_incognito, tab_background_text_incognito_inactive,
-tab_text, toolbar, toolbar_button_icon, toolbar_text
-```
-
-Every color is a 3-element `[R, G, B]` integer array (0-255). No JS
-files, no icons/background/content-script directories under
-`themes/<slug>/brave/` — manifest-only.
-
-## Wallpapers: `scripts/dev/generate_wallpaper_<slug>.py`
-
-Procedural, standard-library only, dev-time-only (never invoked by
-install.sh/apply.sh/uninstall.sh). Import the shared canvas from the
-sibling module:
-
-```python
-from wallpaper_lib import Canvas, DEFAULT_WIDTH, DEFAULT_HEIGHT
-```
-
-(`wallpaper_lib.py` lives at `scripts/dev/wallpaper_lib.py` — do not
-edit it, only import from it. It offers `Canvas(w, h, bg=...)` with
-`set_px`, `draw_line`, `fill_rect`, `fill_triangle`, `fill_circle`,
-`blend_px`, `radial_glow`, and `write_png(path)`.)
-
-Structure your script after `scripts/dev/generate_wallpaper.py`
-(monochrome's own, now a thin user of `wallpaper_lib`): a fixed,
-variant-specific integer seed per variant (never time/host-derived — this
-is what makes regeneration deterministic), a `VARIANTS` tuple, one draw
-function per variant, a `render(variant, width, height)` entry point, and
-a CLI (`variant`, `out.png`, optional `WxHeight`, plus an `all
-<out_dir>` mode that writes `wallpapers/<slug>-<variant>.png` for every
-variant). At least 3 variants; a 4th is fine if the marginal effort is
-small — do not build more than that.
-
-Then actually run it and commit the generated PNGs under `wallpapers/`:
-
-```sh
-python3 scripts/dev/generate_wallpaper_<slug>.py all wallpapers/
-cp wallpapers/<slug>-<your-chosen-default>.png wallpapers/<slug>.png
-```
-
-Constraints checked by `tests/check_all_themes.py`: every
-`wallpapers/<slug>-*.png` must be >= 1920x1080, truecolor RGB (PNG color
-type 2, no alpha), and `wallpapers/<slug>.png` must be byte-identical to
-one of your variants. Unlike monochrome, your palette does NOT need to be
-grayscale — use your theme's real colors, just keep saturation/contrast
-tasteful per your visual brief (busy/neon reads as a regression, not a
-feature). Respect the `Canvas`'s built-in Waybar-strip/Rofi-box quiet
-zones (pass your own `bg` color into `Canvas(w, h, bg=your_background)`)
-so wallpapers don't fight the shell UI sitting on top of them.
-
-## `docs/themes/<slug>.md`
-
-Short, like the level of detail in this repo's own commit messages — not
-a marketing page. Cover: one-paragraph identity statement, the palette
-(hex values + what each is used for), what's structurally different from
-monochrome (density/blur/rounding/border/opacity/transparency — name the
-actual numbers), the wallpaper pack (variant names + one line each), the
-motion tuning you chose and why (or "uses the shared defaults" if you
-didn't override `motion`), and a short "manual verification" checklist
-in the same style as the one in `README.md`'s own "Manual verification"
-section (things to look at on a real Hyprland session, since this
-environment cannot run one).
+The mockup shows an editor, a browser, a music player, a terminal, a chat
+UI, a file manager, a system monitor. **Never build a clone or fake of
+any of these** — that content is illustrative, not something this rice
+ships. Reproduce only real shell surfaces this rice actually has: the
+bar, the launcher, the notification panel, window decoration/blur/
+rounding, the lock screen, browser chrome, terminal appearance, and the
+wallpaper. Do not add new widgets/scripts/fake-content modules to make a
+screenshot look more like the mockup.
 
 ## Validating your work (this environment has no live Hyprland/lua/kitty)
 
-Run from the repo root of YOUR worktree:
+From your worktree's repo root:
 
 ```sh
-python3 scripts/dev/generate_wallpaper_<slug>.py all wallpapers/
 python3 tests/check_all_themes.py
-bash tests/run_tests.sh 2>&1 | tail -40   # full suite; ignore the single
-  # pre-existing "user.lua still parses" failure — that's `lua` missing
-  # from this container, unrelated to any theme
+bash tests/run_tests.sh 2>&1 | tail -60   # ignore the single pre-existing
+  # "user.lua still parses" failure — caused by no `lua` binary in this
+  # container, unrelated to any theme work
 ```
 
-Also sanity-check your JSON/CSS by hand:
+Also hand-verify your new/changed JSON:
 
 ```sh
+python3 -c "import json; json.load(open('themes/<slug>/swaync/config.json'))"
 python3 -c "import json; json.load(open('themes/<slug>/brave/manifest.json'))"
 ```
 
-There is no `lua` interpreter, no `hyprctl`, and no Waybar/Rofi/SwayNC/
-Kitty binaries in this environment — say so plainly in your report rather
-than claiming a live check you couldn't actually run. Static
-structural/schema validation via the commands above is what you CAN
-prove, and that's the bar.
+There is no `lua`, `hyprctl`, or Waybar/Rofi/SwayNC/Kitty binary in this
+environment. Say so plainly in your report — do not claim a live
+rendering check you could not actually run. If `grim`/a live Hyprland
+session genuinely is available to you, apply your theme and screenshot
+it; if not (expected in this environment), say that explicitly and leave
+a manual-verification checklist in your `docs/themes/<slug>.md` instead.
 
 ## Commit
 
-One commit (or a couple of small, clearly-scoped ones) on your own branch
-(`feat/theme-<slug>`), touching only the files listed above. Do not
-push — report back when done; the branches get merged centrally.
+One commit (or a couple of small, clearly-scoped ones) on your branch
+(`feat/theme-<slug>-structure`), touching only the files listed above.
+Do not push — report back when done.
