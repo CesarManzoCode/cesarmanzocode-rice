@@ -11,7 +11,21 @@
   border: 1px solid @border;
   border-radius: 14px;
   color: @fg;
-  padding: 6px;
+  padding: 8px;
+}
+
+/* Best-effort, intentionally narrow-scoped shrink of SwayNC's own built-in
+   "no notifications" placeholder icon (a large stock GtkImage the control
+   center draws itself when the list is empty — not something this repo's
+   CSS creates). Scoped to descendants of .control-center so it can never
+   touch a real per-app notification icon (those live under
+   .notification-row / .notification-background, not bare in the control
+   center chrome). If this build's placeholder doesn't carry an unscoped
+   <image> at this level, the rule is simply inert — never a regression.
+   Confirm the actual placeholder markup with GTK Inspector on the real
+   host and replace this with a precise selector once known. */
+.control-center > box > image {
+  -gtk-icon-size: 40px;
 }
 
 .notification-row {
@@ -57,7 +71,7 @@
 
 .widget-title {
   color: @fg_strong;
-  padding: 12px 14px;
+  padding: 10px 14px 6px;
   font-weight: 600;
 }
 
@@ -74,7 +88,7 @@
 }
 
 .widget-dnd {
-  padding: 8px 14px;
+  padding: 4px 14px 10px;
 }
 
 .widget-dnd > switch {
