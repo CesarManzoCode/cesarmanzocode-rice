@@ -34,8 +34,12 @@ hl.curve("snappy",   { type = "bezier", points = { {0.16, 1},   {0.3, 1}    } })
 hl.curve("linear",   { type = "bezier", points = { {0, 0},      {1, 1}      } })
 -- "overshot" — a small, single overshoot past 1.0 then settle (not a
 -- repeating wobble/jelly), reserved for the one place a little extra
--- personality earns its keep: the special workspace.
-hl.curve("overshot", { type = "bezier", points = { {0.05, 0.9}, {0.1, 1.05} } })
+-- personality earns its keep: the special workspace. Control points eased
+-- slightly closer to a straight settle than V2's (0.9/1.05 -> 0.95/1.03)
+-- after review flagged the original as reading a touch too "bouncy" for
+-- this otherwise restrained rice — still a real, single overshoot, just
+-- a smaller one.
+hl.curve("overshot", { type = "bezier", points = { {0.05, 0.95}, {0.15, 1.03} } })
 
 -- ---- windows -------------------------------------------------------------
 -- Opening: a precise, small pop-in. Closing: noticeably quicker than

@@ -1,0 +1,33 @@
+{
+  "manifest_version": 3,
+  "name": "cesarmanzocode-rice — monochrome",
+  "version": "1.0.0",
+  "description": "Monochrome browser-chrome theme (frame/toolbar/omnibox/tabs only — no web-content theming) matching this rice's Waybar/Kitty/Rofi/SwayNC palette.",
+  "theme": {
+    "colors": {
+      "frame": [11, 11, 11],
+      "frame_inactive": [5, 5, 5],
+
+      "toolbar": [24, 24, 24],
+      "toolbar_text": [244, 244, 244],
+      "toolbar_button_icon": [244, 244, 244],
+      "button_background": [16, 16, 16],
+
+      "omnibox_background": [16, 16, 16],
+      "omnibox_text": [244, 244, 244],
+
+      "tab_text": [255, 255, 255],
+      "background_tab": [11, 11, 11],
+      "background_tab_inactive": [5, 5, 5],
+      "tab_background_text": [154, 154, 154],
+      "tab_background_text_inactive": [154, 154, 154],
+
+      "bookmark_text": [244, 244, 244],
+
+      "ntp_background": [5, 5, 5],
+      "ntp_header": [11, 11, 11],
+      "ntp_link": [244, 244, 244],
+      "ntp_text": [244, 244, 244]
+    }
+  }
+}

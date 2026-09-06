@@ -1,5 +1,9 @@
-/* monochrome — SwayNC palette (visual layer only) */
-@define-color bg rgba(5, 5, 5, 0.85);
+/* monochrome — SwayNC palette (visual layer only).
+   bg alpha lowered from V2's 0.85 now that real layer blur (namespace
+   ^swaync-control-center$, see config/hypr/layers.lua) is confined to the
+   actual panel via ignore_alpha — the panel can afford to let more of
+   that blur through without losing legibility. */
+@define-color bg rgba(5, 5, 5, 0.8);
 @define-color surface #101010;
 @define-color surface_alt #181818;
 @define-color border #383838;

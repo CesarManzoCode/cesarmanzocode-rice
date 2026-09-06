@@ -1,5 +1,8 @@
-/* monochrome — Waybar palette (visual layer only) */
-@define-color bar_bg alpha(#0b0b0b, 0.85);
+/* monochrome — Waybar palette (visual layer only).
+   bar_bg alpha lowered from V2's 0.85 now that real layer blur (namespace
+   ^waybar$, see config/hypr/layers.lua) gives the bar something to show
+   through — still reads as near-black, not grey. */
+@define-color bar_bg alpha(#0b0b0b, 0.8);
 @define-color bar_border #383838;
 @define-color bg #050505;
 @define-color surface_alt #181818;
