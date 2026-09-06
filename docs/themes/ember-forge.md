@@ -51,7 +51,7 @@ alpha values there are all higher than monochrome's equivalents, e.g.
 Rofi's background `0xEE` vs monochrome's `0xD6`, SwayNC's bg alpha `0.94`
 vs `0.8`) rather than floating glass.
 
-## Wallpaper pack (`scripts/dev/generate_wallpaper_ember-forge.py`)
+## Wallpaper pack (`scripts/dev/generate_wallpaper_ember_forge.py`)
 
 Four procedural variants, carbon/copper (not grayscale). Hard geometry,
 diagonals, and fractures carry the "heat/industrial control" feeling —
@@ -73,7 +73,7 @@ deliberately no flame silhouettes, no lava, no literal fire anywhere.
 canonical default `hypr.lua` points at). Regenerate with:
 
 ```sh
-python3 scripts/dev/generate_wallpaper_ember-forge.py all wallpapers/
+python3 scripts/dev/generate_wallpaper_ember_forge.py all wallpapers/
 cp wallpapers/ember-forge-temper.png wallpapers/ember-forge.png
 ```
 

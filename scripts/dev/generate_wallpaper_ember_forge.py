@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-generate_wallpaper_ember-forge.py — procedurally generates the ember-forge
+generate_wallpaper_ember_forge.py — procedurally generates the ember-forge
 theme's final wallpaper pack as plain PNGs, using only the Python standard
 library.
 
@@ -9,8 +9,8 @@ apply.sh / uninstall.sh, so Python is not a runtime dependency of the rice
 — only of regenerating the committed wallpapers/*.png assets.
 
 Usage:
-    python3 scripts/dev/generate_wallpaper_ember-forge.py <variant> <output.png> [WxH]
-    python3 scripts/dev/generate_wallpaper_ember-forge.py all wallpapers/ [WxH]
+    python3 scripts/dev/generate_wallpaper_ember_forge.py <variant> <output.png> [WxH]
+    python3 scripts/dev/generate_wallpaper_ember_forge.py all wallpapers/ [WxH]
 
 Variants: temper, truss, fissure, plate
 
