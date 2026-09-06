@@ -56,6 +56,42 @@
 
 hl.config({ animations = { enabled = true } })
 
+--[[
+  ---------------------------------------------------------------------------
+  PER-THEME MOTION (foundation for arctic-glass/ember-forge/ivory-paper/
+  violet-night — see themes/*/hypr.lua)
+  ---------------------------------------------------------------------------
+
+  THEME.motion is OPTIONAL. Every default below is exactly what this file
+  hardcoded before this table existed, so a theme that omits `motion`
+  entirely (monochrome does, on purpose — it's closed, not being
+  redesigned) gets byte-for-byte the same curves/speeds/styles as before.
+  A theme opts into a distinct feel (glide/firm/precise/expressive) by
+  overriding only the handful of numbers that actually change character —
+  spring stiffness/damping ratios and a couple of style percentages — not
+  by re-deriving this whole file.
+]]
+local motion = THEME.motion or {}
+local springs = motion.springs or {}
+local speeds = motion.speeds or {}
+local styles = motion.styles or {}
+
+local function spring_field(name, key, default)
+  local s = springs[name]
+  if s == nil or s[key] == nil then return default end
+  return s[key]
+end
+
+local function speed(name, default)
+  if speeds[name] == nil then return default end
+  return speeds[name]
+end
+
+local function style(name, default)
+  if styles[name] == nil then return default end
+  return styles[name]
+end
+
 -- ---- bezier curves ---------------------------------------------------------
 
 -- "snappy" — fast ease-out, used for anything appearing/entering that isn't
@@ -75,24 +111,42 @@ hl.curve("linear", { type = "bezier", points = { {0, 0}, {1, 1} } })
 
 -- windowSpring: window open. critical damping ~= 2*sqrt(310) ~= 35.2;
 -- damping 31 -> ratio ~0.88 — a few px of material overshoot, not jelly.
-hl.curve("windowSpring", { type = "spring", mass = 1, stiffness = 310, dampening = 31 })
+-- (defaults are monochrome's own tuned values; a theme overrides via
+-- THEME.motion.springs.window = { stiffness = ..., damping = ... })
+hl.curve("windowSpring", {
+  type = "spring", mass = 1,
+  stiffness = spring_field("window", "stiffness", 310),
+  dampening = spring_field("window", "damping", 31),
+})
 
 -- workspaceSpring: workspace switch. critical ~= 2*sqrt(250) ~= 31.6;
 -- damping 27 -> ratio ~0.85.
-hl.curve("workspaceSpring", { type = "spring", mass = 1, stiffness = 250, dampening = 27 })
+hl.curve("workspaceSpring", {
+  type = "spring", mass = 1,
+  stiffness = spring_field("workspace", "stiffness", 250),
+  dampening = spring_field("workspace", "damping", 27),
+})
 
 -- layerSpring: layer-shell surfaces (Rofi, notifications, popups) that
 -- opt into a spring via their own layer_rule animation style. critical
 -- ~= 2*sqrt(330) ~= 36.3; damping 33 -> ratio ~0.91 — the most "solid"/
 -- least-overshoot spring of the set, matching a menu that must never feel
 -- squishy.
-hl.curve("layerSpring", { type = "spring", mass = 1, stiffness = 330, dampening = 33 })
+hl.curve("layerSpring", {
+  type = "spring", mass = 1,
+  stiffness = spring_field("layer", "stiffness", 330),
+  dampening = spring_field("layer", "damping", 33),
+})
 
 -- specialWorkspaceSpring: deliberately a little less damped than
 -- workspaceSpring so the special workspace reads as a distinct, slightly
 -- more energetic gesture — but still nowhere near an obvious bounce.
 -- critical ~= 2*sqrt(250) ~= 31.6; damping 23 -> ratio ~0.73.
-hl.curve("specialWorkspaceSpring", { type = "spring", mass = 1, stiffness = 250, dampening = 23 })
+hl.curve("specialWorkspaceSpring", {
+  type = "spring", mass = 1,
+  stiffness = spring_field("special_workspace", "stiffness", 250),
+  dampening = spring_field("special_workspace", "damping", 23),
+})
 
 -- ---- windows ---------------------------------------------------------------
 -- Opening: a precise, small pop-in on windowSpring — the window should
@@ -100,26 +154,27 @@ hl.curve("specialWorkspaceSpring", { type = "spring", mass = 1, stiffness = 250,
 -- half its size. Closing: quicker than opening, plain bezier (a spring's
 -- tiny overshoot on the way OUT would read as an unwanted wobble on
 -- dismiss). Moving/resizing: effectively 1:1 with the input, no spring.
-hl.animation({ leaf = "windows",     enabled = true, speed = 1.6,  spring = "windowSpring", style = "popin 94%" })
-hl.animation({ leaf = "windowsIn",   enabled = true, speed = 1.8,  spring = "windowSpring", style = "popin 94%" })
-hl.animation({ leaf = "windowsOut",  enabled = true, speed = 1.2,  bezier = "linear",       style = "popin 94%" })
-hl.animation({ leaf = "windowsMove", enabled = true, speed = 0.9,  bezier = "linear" })
+local windows_popin = style("windows_popin", "popin 94%")
+hl.animation({ leaf = "windows",     enabled = true, speed = speed("windows", 1.6),      spring = "windowSpring", style = windows_popin })
+hl.animation({ leaf = "windowsIn",   enabled = true, speed = speed("windows_in", 1.8),   spring = "windowSpring", style = windows_popin })
+hl.animation({ leaf = "windowsOut",  enabled = true, speed = speed("windows_out", 1.2),  bezier = "linear",       style = windows_popin })
+hl.animation({ leaf = "windowsMove", enabled = true, speed = speed("windows_move", 0.9), bezier = "linear" })
 
 -- ---- layers (rofi, waybar, swaync, and other layer-shell surfaces) -------
 -- Position/size on layerSpring by default; per-namespace shape (popin vs.
 -- slide, and which edge) comes from each surface's own layer_rule
 -- `animation` field in layers.lua — this is just the timing/feel shared by
 -- all of them. Exit stays a quick, non-spring bezier so nothing lingers.
-hl.animation({ leaf = "layersIn",  enabled = true, speed = 1.5, spring = "layerSpring" })
-hl.animation({ leaf = "layersOut", enabled = true, speed = 1.1, bezier = "linear" })
+hl.animation({ leaf = "layersIn",  enabled = true, speed = speed("layers_in", 1.5), spring = "layerSpring" })
+hl.animation({ leaf = "layersOut", enabled = true, speed = speed("layers_out", 1.1), bezier = "linear" })
 
 -- ---- fade --------------------------------------------------------------
 -- Generic fallback for any fade leaf not overridden more specifically
 -- below (fadeShadow, fadeGlow, fadeDim, fadeDpms).
 hl.animation({ leaf = "fade",    enabled = true, speed = 1.0, bezier = "linear" })
 
-hl.animation({ leaf = "fadeIn",     enabled = true, speed = 1.0, bezier = "snappy" })
-hl.animation({ leaf = "fadeOut",    enabled = true, speed = 0.8, bezier = "linear" })
+hl.animation({ leaf = "fadeIn",     enabled = true, speed = speed("fade_in", 1.0), bezier = "snappy" })
+hl.animation({ leaf = "fadeOut",    enabled = true, speed = speed("fade_out", 0.8), bezier = "linear" })
 hl.animation({ leaf = "fadeSwitch", enabled = true, speed = 1.0, bezier = "linear" })
 
 -- Layer-shell alpha is driven independently from layer position/size (see
@@ -142,17 +197,25 @@ hl.animation({ leaf = "fadeShadow", enabled = true, speed = 1.0, bezier = "linea
 -- aren't set individually — the parent leaf's config is exactly what both
 -- directions should share here, and setting them separately would just
 -- duplicate this line for no behavioral difference.
-hl.animation({ leaf = "workspaces", enabled = true, speed = 2.0, spring = "workspaceSpring", style = "slidefade 15%" })
+hl.animation({
+  leaf = "workspaces", enabled = true,
+  speed = speed("workspaces", 2.0), spring = "workspaceSpring",
+  style = style("workspaces", "slidefade 15%"),
+})
 
 -- Special workspace: its own, slightly-less-damped spring and a vertical
 -- slide+fade so it reads as a distinct gesture from a normal workspace
 -- switch, without the old fixed "overshot" bezier's baked-in bounce (the
 -- spring's own light underdamping now supplies that personality).
-hl.animation({ leaf = "specialWorkspace", enabled = true, speed = 2.0, spring = "specialWorkspaceSpring", style = "slidefadevert 12%" })
+hl.animation({
+  leaf = "specialWorkspace", enabled = true,
+  speed = speed("special_workspace", 2.0), spring = "specialWorkspaceSpring",
+  style = style("special_workspace", "slidefadevert 12%"),
+})
 
 -- ---- border / focus ---------------------------------------------------------
 -- Fast, linear — a focus change should read as immediate.
-hl.animation({ leaf = "border", enabled = true, speed = 0.8, bezier = "linear" })
+hl.animation({ leaf = "border", enabled = true, speed = speed("border", 0.8), bezier = "linear" })
 
 -- borderangle would only matter for a rotating/animated gradient border,
 -- which this monochrome theme doesn't use anywhere (windows.lua sets a

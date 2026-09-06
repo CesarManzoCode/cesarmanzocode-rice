@@ -182,6 +182,14 @@ else
   echo "  (python3 not installed, skipping)"
 fi
 
+echo "== theme registry: every theme under themes/ satisfies the common contract =="
+if command -v python3 >/dev/null 2>&1; then
+  check "per-theme invariants (geometry/colors/components/wallpapers, discovered from themes/)" \
+    python3 tests/check_all_themes.py
+else
+  echo "  (python3 not installed, skipping)"
+fi
+
 echo "== v3: brave theme (manifest-only extension, no code) =="
 BRAVE_MANIFEST="themes/monochrome/brave/manifest.json"
 check "brave manifest.json is valid JSON" \
@@ -536,6 +544,39 @@ check "register_bind rejects an empty bind" bash -c '
   declare -A seen=()
   ! register_bind seen "a" ""
 '
+
+echo "== theme registry: apply.sh cleanly applies EVERY theme under themes/ =="
+# apply.sh <theme> <components...> only NARROWS an already-selected set (see
+# its own WANT/FILTER logic) — it never turns a component on that isn't
+# already in SELECTED_COMPONENTS, exactly like a bare `./apply.sh` re-run
+# after install.sh. So each theme gets a state.sh written first, the same
+# way install.sh itself would, rather than relying on FILTER to enable
+# components from nothing.
+for THEME_DIR in themes/*/; do
+  T="$(basename "$THEME_DIR")"
+  THOME="$(mktemp -d)"
+  mkdir -p "$THOME/.config/cesarmanzocode-rice"
+  cat > "$THOME/.config/cesarmanzocode-rice/state.sh" <<EOF
+THEME="$T"
+SELECTED_COMPONENTS="hypr waybar rofi swaync kitty hyprlock hypridle wallpaper brave"
+STATE_SCHEMA_VERSION="2"
+EOF
+  check "apply.sh $T (fresh, no prior install)" env HOME="$THOME" XDG_CONFIG_HOME="$THOME/.config" \
+    XDG_DATA_HOME="$THOME/.local/share" ./apply.sh --no-backup
+  check "$T: theme.lua installed" test -f "$THOME/.config/hypr/cesarmanzocode-rice/theme.lua"
+  check "$T: theme.lua declares this theme's name" \
+    grep -q "name = \"$T\"" "$THOME/.config/hypr/cesarmanzocode-rice/theme.lua"
+  check "$T: wallpaper asset installed" test -f "$THOME/.config/hypr/wallpapers/$T.png"
+  check "$T: waybar colors installed" test -f "$THOME/.config/waybar/colors.css"
+  check "$T: rofi colors installed" test -f "$THOME/.config/rofi/colors.rasi"
+  check "$T: swaync colors installed" test -f "$THOME/.config/swaync/colors.css"
+  check "$T: kitty colors installed" test -f "$THOME/.config/kitty/colors.conf"
+  check "$T: hyprlock.conf installed" test -f "$THOME/.config/hypr/hyprlock.conf"
+  if [ -f "themes/$T/brave/manifest.json" ]; then
+    check "$T: brave theme staged" test -f "$THOME/.local/share/cesarmanzocode-rice/brave/$T/manifest.json"
+  fi
+  rm -rf "$THOME"
+done
 
 echo
 echo "passed: $PASS  failed: $FAIL"

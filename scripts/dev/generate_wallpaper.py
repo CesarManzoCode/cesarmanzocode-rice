@@ -18,16 +18,19 @@ same variant + same resolution always produces byte-identical output (see
 tests/run_tests.sh's determinism check). No network, no AI image
 generation, no Pillow/ImageMagick — a plain PNG encoder using zlib from the
 standard library.
+
+The raster/PNG plumbing (Canvas, quiet-zone dimming, PNG writer) now lives
+in scripts/dev/wallpaper_lib.py, shared with the other themes' generators
+added alongside monochrome's. This file's own output is unchanged byte for
+byte — only the shared code moved, nothing about monochrome's drawing was
+touched (see tests/check_wallpapers.py's determinism check).
 """
 
 import math
 import random
-import struct
 import sys
-import zlib
 
-DEFAULT_WIDTH = 1920
-DEFAULT_HEIGHT = 1080
+from wallpaper_lib import DEFAULT_HEIGHT, DEFAULT_WIDTH, Canvas
 
 # ---- shared monochrome palette (see README "final wallpaper pack") --------
 BG = (0x05, 0x05, 0x05)
@@ -52,149 +55,8 @@ SEEDS = {
     "void": 20260906_4,
 }
 
-# ---- canvas primitives ------------------------------------------------------
-
-
-class Canvas:
-    """A plain RGB raster with the two "keep it quiet here" zones (Waybar's
-    strip along the top, Rofi's box at dead center) baked into every pixel
-    write — every variant gets this for free instead of re-implementing it.
-    """
-
-    def __init__(self, w, h):
-        self.w = w
-        self.h = h
-        row = bytes(BG) * w
-        self.rows = [bytearray(row) for _ in range(h)]
-
-        # Waybar lives in the top ~50px (at 1080p) — scale with height so a
-        # different resolution keeps the same relative quiet strip.
-        self.top_band = max(1, round(h * (50 / 1080)))
-        self.top_feather = max(1, round(h * (140 / 1080)))
-
-        # Rofi is ~520px wide and appears centered; keep a generous margin
-        # around that footprint quiet, not just the exact box. Feathered
-        # rather than a hard cutoff — a sharp brightness step at the box
-        # edge would itself read as an unintended rectangle in the image.
-        cw, ch = min(w * 0.34, 640), min(h * 0.44, 460)
-        self.center_box = (
-            (w - cw) / 2,
-            (h - ch) / 2,
-            (w + cw) / 2,
-            (h + ch) / 2,
-        )
-        self.center_feather = max(1, round(min(w, h) * 0.12))
-
-    @staticmethod
-    def _smoothstep(t):
-        t = max(0.0, min(1.0, t))
-        return t * t * (3 - 2 * t)
-
-    def _dim_factor(self, x, y):
-        factor = 1.0
-
-        if y < self.top_band + self.top_feather:
-            if y < self.top_band:
-                f_top = 0.3
-            else:
-                f_top = 0.3 + 0.7 * self._smoothstep((y - self.top_band) / self.top_feather)
-            factor *= f_top
-
-        x0, y0, x1, y1 = self.center_box
-        dx = max(x0 - x, 0.0, x - x1)
-        dy = max(y0 - y, 0.0, y - y1)
-        dist = math.hypot(dx, dy)
-        if dist < self.center_feather:
-            f_center = 0.4 + 0.6 * self._smoothstep(dist / self.center_feather)
-            factor *= f_center
-
-        return factor
-
-    def set_px(self, x, y, color):
-        x, y = int(x), int(y)
-        if not (0 <= x < self.w and 0 <= y < self.h):
-            return
-        f = self._dim_factor(x, y)
-        if f < 1.0:
-            color = tuple(round(bg + (c - bg) * f) for bg, c in zip(BG, color))
-        o = x * 3
-        self.rows[y][o : o + 3] = bytes(color)
-
-    def fill_triangle(self, pts, color):
-        (x0, y0), (x1, y1), (x2, y2) = pts
-        ymin = max(int(min(y0, y1, y2)), 0)
-        ymax = min(int(max(y0, y1, y2)), self.h - 1)
-
-        def edge(ax, ay, bx, by, px, py):
-            return (bx - ax) * (py - ay) - (by - ay) * (px - ax)
-
-        if edge(x0, y0, x1, y1, x2, y2) == 0:
-            return
-        for y in range(ymin, ymax + 1):
-            xs = []
-            for (ax, ay), (bx, by) in (((x0, y0), (x1, y1)), ((x1, y1), (x2, y2)), ((x2, y2), (x0, y0))):
-                if ay == by:
-                    continue
-                if min(ay, by) <= y < max(ay, by):
-                    t = (y - ay) / (by - ay)
-                    xs.append(ax + t * (bx - ax))
-            if len(xs) >= 2:
-                xa, xb = sorted(xs)[:2]
-                xa, xb = int(round(xa)), int(round(xb))
-                for x in range(max(xa, 0), min(xb, self.w - 1) + 1):
-                    self.set_px(x, y, color)
-
-    def draw_line(self, x0, y0, x1, y1, color, thickness=1):
-        x0, y0, x1, y1 = int(x0), int(y0), int(x1), int(y1)
-        dx = abs(x1 - x0)
-        dy = -abs(y1 - y0)
-        sx = 1 if x0 < x1 else -1
-        sy = 1 if y0 < y1 else -1
-        err = dx + dy
-        x, y = x0, y0
-        while True:
-            for ox in range(thickness):
-                for oy in range(thickness):
-                    self.set_px(x + ox, y + oy, color)
-            if x == x1 and y == y1:
-                break
-            e2 = 2 * err
-            if e2 >= dy:
-                err += dy
-                x += sx
-            if e2 <= dx:
-                err += dx
-                y += sy
-
-    def fill_rect(self, x0, y0, x1, y1, color):
-        x0, x1 = sorted((int(x0), int(x1)))
-        y0, y1 = sorted((int(y0), int(y1)))
-        for y in range(max(y0, 0), min(y1, self.h - 1) + 1):
-            for x in range(max(x0, 0), min(x1, self.w - 1) + 1):
-                self.set_px(x, y, color)
-
-    def write_png(self, path):
-        def chunk(tag, data):
-            return (
-                struct.pack("!I", len(data))
-                + tag
-                + data
-                + struct.pack("!I", zlib.crc32(tag + data) & 0xFFFFFFFF)
-            )
-
-        sig = b"\x89PNG\r\n\x1a\n"
-        ihdr = struct.pack("!IIBBBBB", self.w, self.h, 8, 2, 0, 0, 0)
-        raw = bytearray()
-        for row in self.rows:
-            raw.append(0)  # filter type: none
-            raw.extend(row)
-        idat = zlib.compress(bytes(raw), 9)
-        with open(path, "wb") as f:
-            f.write(sig)
-            f.write(chunk(b"IHDR", ihdr))
-            f.write(chunk(b"IDAT", idat))
-            f.write(chunk(b"IEND", b""))
-
+# ---- canvas primitives: Canvas itself now lives in wallpaper_lib.py, ------
+# shared with the other themes' generators (imported above).
 
 # ---- variant 1: FRACTURE (hero / default) ----------------------------------
 #

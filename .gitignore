@@ -14,3 +14,4 @@ state.sh
 # Local scratch
 /tmp/
 *.bak
+__pycache__/
