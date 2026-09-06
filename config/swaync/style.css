@@ -14,18 +14,30 @@
   padding: 8px;
 }
 
-/* Best-effort, intentionally narrow-scoped shrink of SwayNC's own built-in
-   "no notifications" placeholder icon (a large stock GtkImage the control
-   center draws itself when the list is empty — not something this repo's
-   CSS creates). Scoped to descendants of .control-center so it can never
-   touch a real per-app notification icon (those live under
-   .notification-row / .notification-background, not bare in the control
-   center chrome). If this build's placeholder doesn't carry an unscoped
-   <image> at this level, the rule is simply inert — never a regression.
-   Confirm the actual placeholder markup with GTK Inspector on the real
-   host and replace this with a precise selector once known. */
-.control-center > box > image {
-  -gtk-icon-size: 40px;
+/* SwayNC 0.12.6's own built-in "no notifications" placeholder — verified
+   directly against that version's source
+   (data/ui/notifications_widget.blp): a Box styled
+   "control-center-list-placeholder" containing a plain GtkImage with
+   `pixel-size: 96` set as a widget property, not through CSS.
+
+   That matters because it's exactly why the V3 attempt at this
+   (`-gtk-icon-size: 40px` on a guessed `.control-center > box > image`
+   selector) was inert on two counts: the selector's `>` direct-child
+   chain doesn't match the real widget tree (Stack -> StackPage -> Box ->
+   Image, several containers deeper than ".control-center"), and even with
+   a correct selector, GtkImage's own docs are explicit that an explicitly
+   set pixel-size always wins over the `-gtk-icon-size` CSS property — so
+   that property can never shrink this particular icon.
+
+   A CSS `transform: scale()` still can: it scales what's actually
+   painted, regardless of pixel-size. 96px * 0.4 ~= 38px, inside the
+   ~32-40px target. The negative margin claws back the vertical space GTK
+   still reserves for the icon's un-scaled 96px layout box (a transform is
+   paint-only and doesn't shrink that on its own), which is also what
+   keeps the empty state from feeling tall — not a separate fix. */
+.control-center-list-placeholder image {
+  transform: scale(0.4);
+  margin: -24px 0;
 }
 
 .notification-row {
