@@ -1,0 +1,129 @@
+/* Waybar structure — spacing/shape only. Colors come from colors.css
+   (installed from the active theme), imported below.
+
+   Structural override (v2): this is the quietest of the five bars —
+   smaller height, no pill/capsule decoration around any module (flat
+   text+icon groups separated by whitespace instead), a single hairline
+   border instead of a heavy stroke, and generous margin from the screen
+   edges so the bar reads as floating rather than a solid strip. The active
+   workspace indicator is a thin underline instead of a filled capsule —
+   the one place the shared bar draws a solid background block. */
+@import url("colors.css");
+
+* {
+  font-family: "JetBrainsMono Nerd Font", "Noto Sans", sans-serif;
+  font-size: 12px;
+  min-height: 0;
+}
+
+window#waybar {
+  background: transparent;
+}
+
+#waybar {
+  background-color: @bar_bg;
+  border: 1px solid @bar_border;
+  border-radius: 999px;
+  color: @fg;
+  padding: 0 16px;
+}
+
+#custom-launcher {
+  font-size: 14px;
+  padding: 0 10px 0 12px;
+  color: @fg_strong;
+}
+
+#workspaces {
+  padding: 0 6px;
+}
+
+/* Flat, plain text+icon — no pill-shaped box around any workspace
+   number. A thin underline (added on .active below) is the only
+   decoration, so the group reads as a quiet row of numerals with
+   whitespace between them, not a strip of buttons. */
+#workspaces button {
+  padding: 0 7px;
+  margin: 0 1px;
+  border-radius: 0;
+  border-bottom: 2px solid transparent;
+  color: @muted;
+  background: transparent;
+}
+
+/* Persistent/empty workspaces stay visible (this rice pins 5 of them) but
+   read as clearly inactive — same treatment either way, no color signal. */
+#workspaces button.empty,
+#workspaces button.persistent {
+  color: @subtle;
+}
+
+/* A workspace with windows on it but not focused. */
+#workspaces button.visible {
+  color: @fg;
+}
+
+#workspaces button.active {
+  background: transparent;
+  color: @fg_strong;
+  border-bottom: 2px solid @fg_strong;
+}
+
+/* Urgent stays monochrome — a strong outline instead of red. */
+#workspaces button.urgent {
+  color: @fg_strong;
+  border-bottom: 2px solid @fg_strong;
+}
+
+#workspaces button.workspace-hover {
+  background: transparent;
+  color: @fg_strong;
+}
+
+#clock {
+  font-weight: 600;
+  color: @fg_strong;
+  padding: 0 10px;
+}
+
+#pulseaudio,
+#network,
+#custom-cliphist,
+#tray,
+#custom-notification,
+#custom-power {
+  padding: 0 10px;
+  color: @fg;
+}
+
+/* DND is distinguished by weight, not color — swaync-client -swb reports
+   it via the "dnd-*" alt/class values. */
+#custom-notification.dnd,
+#custom-notification.dnd-none,
+#custom-notification.dnd-notification {
+  color: @fg_strong;
+}
+
+#custom-power {
+  color: @fg_strong;
+  padding-right: 12px;
+}
+
+#tray > .passive {
+  opacity: 0.6;
+}
+
+#pulseaudio.muted {
+  color: @subtle;
+}
+
+#network.disconnected {
+  color: @subtle;
+}
+
+tooltip {
+  background-color: @bar_bg;
+  border: 1px solid @bar_border;
+  border-radius: 8px;
+  color: @fg;
+}

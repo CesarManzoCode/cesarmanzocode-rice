@@ -1,0 +1,95 @@
+// Waybar layout — functional/structural only. Colors live in
+// themes/ivory-paper/waybar/colors.css, imported by style.css.
+//
+// Structural override (v2): same top-bar position as the shared config —
+// Ivory does not get a dock — but measurably thinner and quieter: less
+// height, more margin from the screen edges (reads as floating rather
+// than a solid strip), and more breathing room between module groups.
+// Every module/on-click/exec below is unchanged from the shared config.
+{
+  "layer": "top",
+  "position": "top",
+  "height": 24,
+  "margin-top": 16,
+  "margin-left": 32,
+  "margin-right": 32,
+  "spacing": 10,
+
+  "modules-left": ["custom/launcher", "hyprland/workspaces"],
+  "modules-center": ["clock"],
+  "modules-right": ["pulseaudio", "network", "custom/cliphist", "tray", "custom/notification", "custom/power"],
+
+  "custom/launcher": {
+    "format": "󰣇",
+    "tooltip": false,
+    "on-click": "rofi -show drun"
+  },
+
+  "hyprland/workspaces": {
+    "format": "{id}",
+    "persistent-workspaces": { "*": 5 }
+  },
+
+  "clock": {
+    "format": "{:%H:%M  ·  %a %d %b}",
+    "tooltip-format": "<big>{:%Y %B}</big>\n<tt>{calendar}</tt>"
+  },
+
+  "pulseaudio": {
+    "format": "{icon}  {volume}%",
+    "format-muted": "  muted",
+    "format-icons": { "default": ["", "", ""] },
+    "on-click": "pactl set-sink-mute @DEFAULT_SINK@ toggle",
+    "on-scroll-up": "wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 2%+",
+    "on-scroll-down": "wpctl set-volume @DEFAULT_AUDIO_SINK@ 2%-"
+  },
+
+  "network": {
+    "format-wifi": "  {signalStrength}%",
+    "format-ethernet": "󰈀  Wired",
+    "format-disconnected": "󰤭  offline",
+    "format-linked": "󰈀  Wired (no IP)",
+    "tooltip-format-wifi": "{essid}  ·  {signalStrength}%\n{ifname}: {ipaddr}/{cidr}",
+    "tooltip-format-ethernet": "{ifname}: {ipaddr}/{cidr}",
+    "tooltip-format-disconnected": "Disconnected"
+  },
+
+  "custom/cliphist": {
+    "format": "",
+    "tooltip-text": "Clipboard history",
+    "on-click": "cliphist list | rofi -dmenu | cliphist decode | wl-copy"
+  },
+
+  "tray": {
+    "icon-size": 14,
+    "spacing": 10
+  },
+
+  // Requires the swaync component; if it's disabled on this machine,
+  // swaync-client is simply absent and the click is a no-op — same
+  // best-effort convention already used by custom/cliphist above (see
+  // README "Known limitations"). "alt"/"class" values come straight from
+  // `swaync-client -swb`'s own JSON output — verify with that command on
+  // the real machine if the icon ever looks wrong for the DND state.
+  "custom/notification": {
+    "exec": "swaync-client -swb",
+    "return-type": "json",
+    "format": "{icon}",
+    "format-icons": {
+      "notification": "󰂚",
+      "none": "󰂜",
+      "dnd-notification": "󰂛",
+      "dnd-none": "󰂛"
+    },
+    "on-click": "swaync-client -t -sw",
+    "on-click-right": "swaync-client -d -sw",
+    "escape": true,
+    "tooltip": true
+  },
+
+  "custom/power": {
+    "format": "⏻",
+    "tooltip": false,
+    "on-click": "~/.config/rofi/power-menu.sh"
+  }
+}
