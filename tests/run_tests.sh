@@ -110,6 +110,62 @@ check "waybar workspaces format shows the id" \
 check "rofi does not hardcode a Papirus dependency the installer never installs" \
   bash -c '! grep -q "icon-theme:.*Papirus" config/rofi/config.rasi'
 
+echo "== v3: layer blur rules =="
+check "init.lua requires layers.lua" bash -c 'grep -q "require(\"layers\")" config/hypr/init.lua'
+check "layers.lua loaded after windows.lua, before monitors.lua" bash -c '
+  python3 -c "
+lines = [l.strip() for l in open(\"config/hypr/init.lua\") if l.strip().startswith(\"require\")]
+i_windows = lines.index(\"require(\\\"windows\\\")\")
+i_layers = lines.index(\"require(\\\"layers\\\")\")
+i_monitors = lines.index(\"require(\\\"monitors\\\")\")
+i_autostart = lines.index(\"require(\\\"autostart\\\")\")
+assert i_windows < i_layers < i_monitors < i_autostart
+"
+'
+check "layers.lua only references the 3 verified namespaces" bash -c '
+  actual=$(grep -oE "\^[a-z-]+\\\$" config/hypr/layers.lua | sort -u)
+  expected=$(printf "%s\n" "^rofi\$" "^waybar\$" "^swaync-control-center\$" | sort -u)
+  [ "$actual" = "$expected" ]
+'
+strip_lua_comments() {
+  # Drop --[[ ... ]] block comments and full-line "--" comments so prose
+  # explaining what NOT to add (this file's own header/footer commentary)
+  # doesn't trip a check meant to scan actual code.
+  python3 -c "
+import re, sys
+text = open(sys.argv[1]).read()
+text = re.sub(r'--\[\[.*?\]\]', '', text, flags=re.S)
+for line in text.splitlines():
+    if not line.strip().startswith('--'):
+        print(line)
+" "$1"
+}
+check "no dim_around/xray/above_lock/no_screen_share field set in layers.lua" \
+  bash -c '! strip_lua_comments config/hypr/layers.lua | grep -qE "dim_around|xray|above_lock|no_screen_share"'
+check "no order = field in layers.lua" \
+  bash -c '! strip_lua_comments config/hypr/layers.lua | grep -qE "\<order\>\s*="'
+check "no invented notification-popup namespace hardcoded as an actual rule" \
+  bash -c '! strip_lua_comments config/hypr/layers.lua | grep -q "swaync-notification"'
+
+echo "== v3: kitty translucency stays sane =="
+check "kitty keeps tab_bar_style separator (not slim)" \
+  grep -q "^tab_bar_style separator$" config/kitty/kitty.conf
+check "kitty background_opacity is within 0.80-0.86" bash -c '
+  python3 -c "
+import re
+v = float(re.search(r\"background_opacity ([0-9.]+)\", open(\"config/kitty/kitty.conf\").read()).group(1))
+assert 0.80 <= v <= 0.86, v
+"
+'
+
+echo "== v3: swaync adaptive control center =="
+check "swaync fit-to-screen is false" \
+  bash -c 'python3 -c "import json; assert json.load(open(\"config/swaync/config.json\"))[\"fit-to-screen\"] is False"'
+check "swaync control-center-height is -1 (content-fit)" \
+  bash -c 'python3 -c "import json; assert json.load(open(\"config/swaync/config.json\"))[\"control-center-height\"] == -1"'
+check "swaync config.json is valid JSON" \
+  bash -c 'python3 -c "import json; json.load(open(\"config/swaync/config.json\"))"'
+
 echo "== end-to-end: --dry-run touches nothing =="
 DRYHOME="$(mktemp -d)"
 check "dry-run --defaults" env HOME="$DRYHOME" XDG_CONFIG_HOME="$DRYHOME/.config" \

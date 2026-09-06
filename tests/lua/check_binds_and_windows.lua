@@ -232,6 +232,65 @@ if ok3 then
     workspaces and workspaces.style or "nil")
 end
 
+-- ---- layers.lua ---------------------------------------------------------
+-- Verifies the three layer rules use exactly the namespaces measured with
+-- `hyprctl layers` on the real target machine, and that none of them
+-- reach for fields this pass deliberately left out.
+
+hl_mock.layer_rules = {}
+local ok4, err4 = pcall(dofile, REPO_ROOT .. "config/hypr/layers.lua")
+check("layers.lua loads and runs against the mock", ok4, err4)
+
+if ok4 then
+  local function find_layer(namespace_pattern)
+    for _, r in ipairs(hl_mock.layer_rules) do
+      if r.match and r.match.namespace == namespace_pattern then return r end
+    end
+    return nil
+  end
+
+  local EXPECTED_NAMESPACES = { "^rofi$", "^waybar$", "^swaync-control-center$" }
+
+  check("layers.lua defines exactly 3 layer rules",
+    #hl_mock.layer_rules == 3, tostring(#hl_mock.layer_rules))
+
+  for _, ns in ipairs(EXPECTED_NAMESPACES) do
+    local rule = find_layer(ns)
+    check("layer rule for namespace " .. ns .. " exists", rule ~= nil)
+    if rule then
+      check("layer rule " .. ns .. " has blur = true", rule.blur == true)
+      check("layer rule " .. ns .. " has ignore_alpha in [0, 1]",
+        type(rule.ignore_alpha) == "number" and rule.ignore_alpha >= 0 and rule.ignore_alpha <= 1,
+        tostring(rule.ignore_alpha))
+    end
+  end
+
+  -- Only the 3 measured namespaces are used — no invented/guessed one
+  -- (e.g. a notification-popup namespace that hasn't actually been
+  -- measured yet).
+  local only_expected_namespaces = true
+  for _, r in ipairs(hl_mock.layer_rules) do
+    local matched = false
+    for _, ns in ipairs(EXPECTED_NAMESPACES) do
+      if r.match and r.match.namespace == ns then matched = true end
+    end
+    if not matched then only_expected_namespaces = false end
+  end
+  check("layers.lua uses only the 3 verified namespaces", only_expected_namespaces)
+
+  -- None of these fields serve this pass's goal; their presence would mean
+  -- scope crept beyond what was asked.
+  local DISALLOWED_FIELDS = { "dim_around", "xray", "above_lock", "no_screen_share", "order" }
+  local no_disallowed_fields = true
+  for _, r in ipairs(hl_mock.layer_rules) do
+    for _, field in ipairs(DISALLOWED_FIELDS) do
+      if r[field] ~= nil then no_disallowed_fields = false end
+    end
+  end
+  check("no layer rule sets dim_around/xray/above_lock/no_screen_share/order",
+    no_disallowed_fields)
+end
+
 if #failures > 0 then
   print(string.format("\n%d check(s) failed", #failures))
   os.exit(1)
