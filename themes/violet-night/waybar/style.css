@@ -1,0 +1,161 @@
+/* violet-night — Waybar structure override: RIGHT VERTICAL RAIL.
+   Colors come from colors.css (installed from this theme), imported
+   below. This is deliberately NOT ember-forge's dense/industrial left
+   dock recolored: violet-night's rail is spacious and atmospheric —
+   bigger gaps between items, softer/rounder module shapes matching this
+   theme's higher `rounding` (14 vs. monochrome's 9), and a soft violet
+   glow on the active workspace consistent with the theme's strong
+   blur+vibrancy geometry. */
+@import url("colors.css");
+
+* {
+  font-family: "JetBrainsMono Nerd Font", "Noto Sans", sans-serif;
+  font-size: 13px;
+  min-width: 0;
+}
+
+window#waybar {
+  background: transparent;
+}
+
+/* The rail itself: a tall, narrow, softly-rounded glass column instead
+   of a wide short strip. Rounding matches this theme's geometry.rounding
+   (14) rather than reusing monochrome's flatter 12. */
+#waybar {
+  background-color: @bar_bg;
+  border: 1px solid @bar_border;
+  border-radius: 20px;
+  color: @fg;
+  padding: 18px 0;
+}
+
+/* Vertical box layout: Waybar lays modules out along the bar's own
+   orientation automatically once "orientation": "vertical" is set, but
+   every module needs centering/margin written for a column instead of a
+   row — this is the single biggest CSS-shape difference from the shared
+   horizontal style.css. */
+#custom-launcher,
+#workspaces,
+#clock,
+#pulseaudio,
+#network,
+#custom-cliphist,
+#tray,
+#custom-notification,
+#custom-power {
+  margin: 10px 0;
+}
+
+#custom-launcher {
+  font-size: 20px;
+  color: @fg_strong;
+}
+
+#workspaces {
+  padding: 4px 0;
+}
+
+/* Bigger touch targets and more breathing room than ember-forge's tight
+   dock — each workspace pill is a generous rounded square with real
+   space around it, never a cramped row of ticks. */
+#workspaces button {
+  min-width: 34px;
+  min-height: 34px;
+  margin: 6px 8px;
+  padding: 0;
+  border-radius: 12px;
+  color: @muted;
+  background: transparent;
+}
+
+/* Persistent/empty workspaces stay visible (this rice pins 5 of them)
+   but read as clearly inactive — same treatment either way, no color
+   signal beyond the one contained accent below. */
+#workspaces button.empty,
+#workspaces button.persistent {
+  color: @subtle;
+}
+
+#workspaces button.visible {
+  color: @fg;
+}
+
+/* The one deliberately loud element on the rail: a soft violet glow-fill
+   behind the active workspace, consistent with this theme's contained
+   accent + expressive blur language (border_active/accent everywhere
+   else stays desaturated). */
+#workspaces button.active {
+  background-color: @accent;
+  color: @bg;
+  box-shadow: 0 0 12px 1px alpha(@accent, 0.45);
+}
+
+#workspaces button.urgent {
+  color: @fg_strong;
+  border: 1px solid @fg_strong;
+}
+
+#workspaces button.workspace-hover {
+  background-color: @surface_alt;
+  color: @fg_strong;
+}
+
+/* Vertical-column clock: stacked HH / MM (see config.jsonc's "{:%H\n%M}"
+   format) instead of a wide horizontal string — stays compact and
+   legible at rail width. Sits as the rail's visual midpoint, echoing the
+   mockup's "clock, workspaces, status, actions" vertical stack. */
+#clock {
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 1.25;
+  color: @fg_strong;
+  padding: 6px 0;
+}
+
+#pulseaudio,
+#network,
+#custom-cliphist,
+#tray,
+#custom-notification,
+#custom-power {
+  font-size: 16px;
+  color: @fg;
+}
+
+/* DND is distinguished by weight/color shift, not a red dot. */
+#custom-notification.dnd,
+#custom-notification.dnd-none,
+#custom-notification.dnd-notification {
+  color: @fg_strong;
+}
+
+#custom-power {
+  color: @fg_strong;
+  margin-bottom: 4px;
+}
+
+#tray {
+  padding: 4px 0;
+}
+
+#tray > .passive {
+  opacity: 0.6;
+}
+
+#pulseaudio.muted {
+  color: @subtle;
+}
+
+#network.disconnected {
+  color: @subtle;
+}
+
+/* Tooltips pop out to the left of the rail (Waybar's own GTK layer
+   handles the anchor side automatically based on available screen
+   space), softly rounded to match the rail's own shape. */
+tooltip {
+  background-color: @bar_bg;
+  border: 1px solid @bar_border;
+  border-radius: 12px;
+  color: @fg;
+}
