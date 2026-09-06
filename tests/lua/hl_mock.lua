@@ -21,6 +21,8 @@ M.binds = {}
 M.window_rules = {}
 M.monitors = {}
 M.configs = {}
+M.animations = {}
+M.curves = {}
 
 -- A "MODS + KEY" string, as sent to the real hl.bind(), must have every
 -- modifier separated from the next token by its own " + " — a token that
@@ -78,6 +80,29 @@ end
 
 function M.config(spec)
   M.configs[#M.configs + 1] = spec
+end
+
+-- speed must be a positive number (deciseconds) and leaf/bezier must be
+-- non-empty strings — the shape animations.lua actually sends, and the
+-- part a plain loadfile() syntax check cannot catch (a stray string like
+-- speed = "2.0" parses fine as Lua but is exactly the kind of thing that
+-- only shows up wrong against the real Hyprland parser).
+function M.animation(spec)
+  assert(type(spec) == "table", "hl.animation: spec must be a table")
+  assert(type(spec.leaf) == "string" and spec.leaf ~= "", "hl.animation: leaf must be a non-empty string")
+  assert(type(spec.speed) == "number" and spec.speed > 0, string.format(
+    "hl.animation: leaf %q speed must be a positive number, got %s", spec.leaf, tostring(spec.speed)))
+  if spec.bezier ~= nil then
+    assert(type(spec.bezier) == "string" and spec.bezier ~= "",
+      string.format("hl.animation: leaf %q bezier must be a non-empty string", spec.leaf))
+  end
+  M.animations[#M.animations + 1] = spec
+end
+
+function M.curve(name, spec)
+  assert(type(name) == "string" and name ~= "", "hl.curve: name must be a non-empty string")
+  assert(type(spec) == "table" and type(spec.points) == "table", "hl.curve: spec.points must be a table")
+  M.curves[name] = spec
 end
 
 function M.exec_cmd(cmd)

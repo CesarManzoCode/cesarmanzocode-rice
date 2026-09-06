@@ -27,9 +27,24 @@ return {
     gaps_in          = 8,
     gaps_out         = 16,
     rounding         = 9,
+    -- rounding_power: Hyprland's corner-exponent field (2 = perfectly
+    -- circular, its own default; a bit higher softens corners into a
+    -- subtle squircle without touching the `rounding` radius itself).
+    -- Applied defensively in windows.lua (pcall) since it's not present in
+    -- every Hyprland build.
+    rounding_power   = 4,
     blur_enabled     = true,
-    blur_size        = 4,
+    blur_size        = 6,
     blur_passes      = 2,
+    -- Mild depth cues on the blur itself — no vibrancy/saturation (this
+    -- theme has no color to boost), a touch of noise so the blur doesn't
+    -- read as a flat grey plate, and slightly reduced brightness/contrast
+    -- so bright wallpaper regions don't wash out through translucent UI.
+    blur_noise             = 0.02,
+    blur_contrast          = 1.05,
+    blur_brightness        = 0.9,
+    blur_vibrancy          = 0,
+    blur_vibrancy_darkness = 0,
     shadow_enabled   = true,
     active_opacity   = 1.0,
     inactive_opacity = 0.97,
