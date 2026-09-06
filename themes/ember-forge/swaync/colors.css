@@ -1,0 +1,12 @@
+/* ember-forge — SwayNC palette (visual layer only).
+   bg alpha higher than monochrome's 0.8 — cards read as solid, stacked
+   plates with strong hierarchy (bg -> surface -> surface_alt), less
+   vaporous than a glass panel. */
+@define-color bg rgba(12, 9, 7, 0.94);
+@define-color surface #1D1610;
+@define-color surface_alt #281E16;
+@define-color border #3D2E23;
+@define-color fg #EAE0D5;
+@define-color fg_strong #FFF6EC;
+@define-color muted #9C8570;
+@define-color subtle #4F3F32;

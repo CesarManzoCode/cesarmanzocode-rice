@@ -1,0 +1,17 @@
+/* ember-forge — Rofi palette (visual layer only).
+   Higher alpha across the board than monochrome — a technical panel
+   reading as a firm, near-opaque plate rather than floating glass. The
+   copper accent only shows up via border/foreground-strong, never as a
+   background fill. */
+* {
+    background:         #0C0907EE;
+    surface:            #1D1610F5;
+    foreground:         #EAE0D5FF;
+    foreground-strong:  #FFF6ECFF;
+    muted:              #9C8570FF;
+    border:             #C97536FF;
+    /* Zebra striping only — deliberately lower alpha than @surface (which
+       stays reserved for the search bar, the one control that should read
+       as clearly distinct). */
+    zebra:              #281E16CC;
+}

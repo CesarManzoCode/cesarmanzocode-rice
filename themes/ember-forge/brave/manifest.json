@@ -1,0 +1,33 @@
+{
+  "manifest_version": 3,
+  "name": "cesarmanzocode-rice — ember-forge",
+  "version": "1.0.0",
+  "description": "Ember-forge browser-chrome theme (frame/toolbar/omnibox/tabs only — no web-content theming) matching this rice's Waybar/Kitty/Rofi/SwayNC carbon/copper palette.",
+  "theme": {
+    "colors": {
+      "frame": [20, 15, 11],
+      "frame_inactive": [12, 9, 7],
+
+      "toolbar": [29, 22, 16],
+      "toolbar_text": [234, 224, 213],
+      "toolbar_button_icon": [234, 224, 213],
+      "button_background": [40, 30, 22],
+
+      "omnibox_background": [29, 22, 16],
+      "omnibox_text": [234, 224, 213],
+
+      "tab_text": [255, 246, 236],
+      "background_tab": [20, 15, 11],
+      "background_tab_inactive": [12, 9, 7],
+      "tab_background_text": [156, 133, 112],
+      "tab_background_text_inactive": [156, 133, 112],
+
+      "bookmark_text": [234, 224, 213],
+
+      "ntp_background": [12, 9, 7],
+      "ntp_header": [20, 15, 11],
+      "ntp_link": [201, 117, 54],
+      "ntp_text": [234, 224, 213]
+    }
+  }
+}
