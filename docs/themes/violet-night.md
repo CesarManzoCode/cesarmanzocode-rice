@@ -134,12 +134,12 @@ Structure:
 {
   "layer": "top",
   "position": "right",
-  "orientation": "vertical",
   "width": 64,
   "margin-top": 20, "margin-bottom": 20, "margin-right": 16, "margin-left": 0,
   "spacing": 10,
-  "modules": [
-    "custom/launcher", "hyprland/workspaces", "clock",
+  "modules-left": ["custom/launcher", "hyprland/workspaces"],
+  "modules-center": ["clock"],
+  "modules-right": [
     "pulseaudio", "network", "custom/cliphist", "tray",
     "custom/notification", "custom/power"
   ]
@@ -148,22 +148,30 @@ Structure:
 
 Every module, its `on-click`/`on-scroll`/`exec` command, and its function
 is identical to the shared horizontal config — this is purely a layout
-reorientation (`modules-left`/`modules-center`/`modules-right` collapsed
-into one ordered vertical `modules` column) plus, where a module's text
-would not fit a 64px-wide column, a more compact **display format** for
-that module (e.g. `pulseaudio`/`network` show icon-only instead of
-`icon + NN%` text, with the percentage/detail moved into the tooltip;
-`clock` shows a stacked `HH\nMM` instead of `HH:MM · Day DD Mon`, with the
-full date/calendar in its tooltip). No binding, command, or capability
-was removed — only how much text renders inline on a narrow rail changed.
+reorientation into `modules-left`/`modules-center`/`modules-right` (per
+Waybar 0.15.0's real contract: `Bar::Bar` picks
+`Gtk::ORIENTATION_VERTICAL` automatically from `"position": "right"`,
+and `setupWidgets()` only ever wires up `modules-left`/`modules-center`/
+`modules-right` — there is no top-level `"modules"` array or
+`"orientation"` key) plus, where a module's text would not fit a 64px-
+wide column, a more compact **display format** for that module (e.g.
+`pulseaudio`/`network` show icon-only instead of `icon + NN%` text, with
+the percentage/detail moved into the tooltip; `clock` shows a stacked
+`HH\nMM` instead of `HH:MM · Day DD Mon`, with the full date/calendar in
+its tooltip). No binding, command, or capability was removed — only how
+much text renders inline on a narrow rail changed.
 
-Grouping mirrors the shared bar's original intent read top-to-bottom
-instead of left-to-right: launcher + workspaces at the top (navigation),
-clock in the visual middle (the one "anchor" element, matching the
-mockup's "clock, workspaces, status, actions" description), then
-status/action modules (audio, network, clipboard, tray, notifications,
-power) stacked toward the bottom — the same grouping the shared
-`modules-right` array already expressed, just read downward.
+Grouping mirrors the shared bar's original intent, stacked top-to-bottom
+instead of left-to-right (Waybar stacks each group's modules top-to-
+bottom on a left/right bar: `modules-left` becomes the TOP group,
+`modules-center` the MIDDLE group, `modules-right` the BOTTOM group —
+same convention ember-forge's left dock already uses): launcher +
+workspaces at the top (navigation), clock in the visual middle (the one
+"anchor" element, matching the mockup's "clock, workspaces, status,
+actions" description), then status/action modules (audio, network,
+clipboard, tray, notifications, power) stacked toward the bottom — the
+same grouping the shared `modules-right` array already expressed, just
+read downward.
 
 `style.css` gives the rail violet-night's own **spacious/premium/
 atmospheric** character rather than a recolor of ember-forge's dense
@@ -281,8 +289,10 @@ three-block shape (`background`, two `label`s, one `input-field`) and the
 
 Both violet-night's right rail and ember-forge's left dock (ember-forge's
 own structural pass, tracked separately) are the same structural idea —
-Waybar as a `position: left|right`, `orientation: vertical` dock instead
-of a horizontal top bar — placed as **mirror images** of each other. The
+Waybar as a `position: left|right` dock (Waybar picks the vertical
+orientation from `position` alone; there is no separate `orientation`
+key) instead of a horizontal top bar — placed as **mirror images** of
+each other. The
 difference between them is deliberately in *character*, not mechanism:
 
 | | ember-forge (left dock) | violet-night (right rail) |
@@ -315,8 +325,8 @@ hyprctl configerrors     # expect: clean
   bounce/wobble, just slightly less "snapped to rest".
 - **Waybar (right vertical rail — required, not optional)**: confirm
   Waybar actually renders as a tall narrow column pinned to the right
-  edge — `position: right`, `orientation: vertical` — NOT a horizontal
-  top bar. Confirm every module (launcher, workspaces, clock, pulseaudio,
+  edge — `position: right` (Waybar derives the vertical orientation from
+  this alone) — NOT a horizontal top bar. Confirm every module (launcher, workspaces, clock, pulseaudio,
   network, cliphist, tray, notification, power) is present and clickable/
   scrollable exactly as before, just stacked top-to-bottom, with the
   rail reading as dark nocturnal glass (~0.72 alpha) and generous spacing

@@ -74,12 +74,21 @@ power) present and wired to the same `on-click`/`exec` commands; you are
 changing layout/orientation/grouping, never functionality, app choices,
 or binds.
 
-Waybar's `"orientation"` config key and `"position": "left"|"right"|"top"`
-control vertical vs. horizontal bars; a vertical bar typically needs
-`modules-left`/`modules-right` renamed to a single ordered `modules`-style
-column (check Waybar's own docs/examples for the exact vertical-bar
-module-list keys on this version) and CSS written for a narrow, tall
-`window#waybar` instead of a wide, short one.
+Waybar's `"position": "left"|"right"|"top"|"bottom"` alone controls
+vertical vs. horizontal bars — `Bar::Bar` picks
+`Gtk::ORIENTATION_VERTICAL` automatically for `left`/`right`; there is
+no separate top-level `"orientation"` key, and setting one has no effect
+(verified against Waybar 0.15.0 source). Keep using
+`modules-left`/`modules-center`/`modules-right` on a vertical bar too —
+`setupWidgets()` only ever wires up those three keys, never a top-level
+`"modules"` array (a theme that ships one instead of
+`modules-left`/`-center`/`-right` starts with zero modules on that
+group). On a left/right bar, Waybar stacks each group's modules
+top-to-bottom within it, and stacks the groups themselves top-to-bottom
+in order (`modules-left` = top, `modules-center` = middle,
+`modules-right` = bottom) — see `themes/ember-forge/waybar/config.jsonc`
+or `themes/violet-night/waybar/config.jsonc` for worked examples. Write
+CSS for a narrow, tall `window#waybar` instead of a wide, short one.
 
 Rofi's `window { location; anchor; }` control on-screen placement — e.g.
 `location: west; anchor: west;` docks it to the left edge instead of

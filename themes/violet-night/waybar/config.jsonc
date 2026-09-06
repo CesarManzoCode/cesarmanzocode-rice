@@ -2,15 +2,23 @@
 // Structural only: colors live in themes/violet-night/waybar/colors.css,
 // imported by this theme's style.css. Every module below is the same
 // module/on-click/exec set as the shared config/waybar/config.jsonc —
-// nothing dropped, nothing rewired — just reflowed into a single ordered
-// top-to-bottom column instead of left/center/right horizontal groups,
-// per the approved mockup: a vertical rail pinned to the right edge
-// (mirror position of ember-forge's left dock, but spacious/atmospheric
-// rather than dense/industrial).
+// nothing dropped, nothing rewired — just reflowed into modules-left/
+// -center/-right per Waybar 0.15.0's real contract (verified against
+// Bar::Bar and setupWidgets() in the 0.15.0 source): "position": "right"
+// alone makes Bar::Bar pick Gtk::ORIENTATION_VERTICAL — there is no
+// separate top-level "orientation" key, and setupWidgets() only ever
+// wires up modules-left/modules-center/modules-right, never a top-level
+// "modules" array, so that key was silently inert (the rail could start
+// with zero modules). On a vertical bar Waybar stacks each group
+// top-to-bottom, so modules-left/-center/-right becomes the same visual
+// top-to-bottom column this theme always intended: launcher+workspaces
+// at the top (navigation), clock in the middle (the one "anchor"
+// element), status/action modules stacked toward the bottom — mirrors
+// ember-forge's left dock, but spacious/atmospheric rather than
+// dense/industrial.
 {
   "layer": "top",
   "position": "right",
-  "orientation": "vertical",
   "width": 64,
   "margin-top": 20,
   "margin-bottom": 20,
@@ -21,24 +29,16 @@
   "margin-left": 0,
   "spacing": 10,
 
-  // A vertical bar has no "left/center/right" — Waybar reads a single
-  // ordered `modules` column top-to-bottom. Grouping mirrors the shared
-  // horizontal bar's intent: launcher+workspaces up top (navigation),
-  // clock in the visual middle (the one "anchor" element), then
-  // status/action modules stacked toward the bottom (mirrors the shared
-  // config's modules-right group, just read downward instead of
-  // rightward).
-  "modules": [
-    "custom/launcher",
-    "hyprland/workspaces",
-    "clock",
-    "pulseaudio",
-    "network",
-    "custom/cliphist",
-    "tray",
-    "custom/notification",
-    "custom/power"
-  ],
+  // On a left/right bar, Waybar stacks modules-left as the TOP group,
+  // modules-center as the MIDDLE group, and modules-right as the BOTTOM
+  // group (each group's own modules run top-to-bottom within it) — same
+  // convention already used by ember-forge's left dock. Grouping mirrors
+  // the shared horizontal bar's intent: launcher+workspaces up top
+  // (navigation), clock in the visual middle (the one "anchor" element),
+  // then status/action modules stacked toward the bottom.
+  "modules-left": ["custom/launcher", "hyprland/workspaces"],
+  "modules-center": ["clock"],
+  "modules-right": ["pulseaudio", "network", "custom/cliphist", "tray", "custom/notification", "custom/power"],
 
   "custom/launcher": {
     "format": "󰣇",

@@ -12,7 +12,12 @@ hardcoded theme list), so a 5th/6th theme is covered automatically:
   - a wallpaper pack: wallpapers/<theme>.png (canonical) plus at least 3
     wallpapers/<theme>-*.png variants, all valid truecolor RGB PNGs at
     >=1920x1080, with the canonical file byte-identical to one of them;
-  - no theme hardcodes a user/monitor/absolute-repo path.
+  - no theme hardcodes a user/monitor/absolute-repo path;
+  - any waybar/config.jsonc (shared or per-theme override) uses Waybar's
+    real modules-left/modules-center/modules-right keys, never a
+    top-level "modules" array — the latter is silently inert on Waybar
+    0.15.0 and was the violet-night right-rail regression this guards
+    against.
 
 Dev-time check, no Hyprland/lua required. Gated in tests/run_tests.sh like
 tests/check_wallpapers.py.
@@ -79,6 +84,38 @@ HARDCODE_PATTERNS = [
 ]
 
 
+def strip_jsonc_comments(text):
+    """Drop // line comments from a .jsonc file so it can be parsed with
+    json.loads. Waybar configs never use // inside a string value, so a
+    plain regex is safe here (same approach already used for shell/lua
+    comment-stripping elsewhere in this file)."""
+    return re.sub(r"//[^\n]*", "", text)
+
+
+def check_waybar_config_uses_real_module_keys(label, path):
+    """Waybar (verified against the 0.15.0 source: Bar::Bar/setupWidgets)
+    only ever loads modules-left/modules-center/modules-right for the bar
+    — there is no top-level "modules" array. A theme override that ships
+    a top-level "modules" key instead of modules-left/-center/-right is
+    silently inert: that group of the bar starts with zero modules. This
+    guards the exact violet-night regression (a `"modules": [...]` array
+    alongside "position": "right") from reappearing in any theme."""
+    if not os.path.isfile(path):
+        return
+    try:
+        d = json.loads(strip_jsonc_comments(open(path).read()))
+    except Exception as e:
+        check(f"{label}: config.jsonc is valid JSONC ({e})", False)
+        return
+    check(f"{label}: config.jsonc is valid JSONC", True)
+    check(f"{label}: config.jsonc has no top-level \"modules\" array "
+          f"(Waybar 0.15.0 only loads modules-left/-center/-right)",
+          "modules" not in d)
+    check(f"{label}: config.jsonc has at least one of "
+          f"modules-left/modules-center/modules-right",
+          any(k in d for k in ("modules-left", "modules-center", "modules-right")))
+
+
 def strip_lua_comments(text):
     """Drop --[[ ... ]] block comments and full-line/trailing "--" comments
     so a theme's own prose (explaining a blur value, say) never confuses
@@ -125,6 +162,10 @@ def main():
     )
     check(f"at least one theme discovered under themes/ (found: {theme_names})", len(theme_names) > 0)
 
+    check_waybar_config_uses_real_module_keys(
+        "config/waybar (shared default)",
+        os.path.join(REPO_ROOT, "config", "waybar", "config.jsonc"))
+
     for theme in theme_names:
         tdir = os.path.join(THEMES_DIR, theme)
         print(f"-- theme: {theme} --")
@@ -167,6 +208,10 @@ def main():
                 text = open(path).read()
                 for pat in HARDCODE_PATTERNS:
                     check(f"{theme}: {rel} has no hardcoded path ({pat.pattern})", not pat.search(text))
+
+        check_waybar_config_uses_real_module_keys(
+            f"{theme}: waybar/config.jsonc",
+            os.path.join(tdir, "waybar", "config.jsonc"))
 
         brave_manifest = os.path.join(tdir, "brave", "manifest.json")
         if os.path.isfile(brave_manifest):

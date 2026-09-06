@@ -29,10 +29,11 @@ window#waybar {
   padding: 18px 0;
 }
 
-/* Vertical box layout: Waybar lays modules out along the bar's own
-   orientation automatically once "orientation": "vertical" is set, but
-   every module needs centering/margin written for a column instead of a
-   row — this is the single biggest CSS-shape difference from the shared
+/* Vertical box layout: Bar::Bar (Waybar 0.15.0) picks
+   Gtk::ORIENTATION_VERTICAL automatically from "position": "right" —
+   no separate "orientation" key needed or read — but every module still
+   needs centering/margin written for a column instead of a row — this
+   is the single biggest CSS-shape difference from the shared
    horizontal style.css. */
 #custom-launcher,
 #workspaces,
