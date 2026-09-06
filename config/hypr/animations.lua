@@ -1,29 +1,21 @@
 --[[
   animations.lua — shared animation curves/speeds.
 
-  Fast, precise, no "showcase" easing. Themes may override speed/curve
-  values in the future via THEME.animations, but monochrome just uses
-  these shared defaults.
+  Fast, precise, no "showcase" easing. Same curves/speeds as before the
+  migration, just expressed with hl.curve()/hl.animation() tables instead
+  of hyprlang `bezier =` / `animation =` lines.
 ]]
 
-local hl = require("hl")
+hl.config({ animations = { enabled = true } })
 
-hl.comment("animations.lua: fast + precise motion")
+hl.curve("linear",   { type = "bezier", points = { {0, 0},      {1, 1}      } })
+hl.curve("snappy",   { type = "bezier", points = { {0.16, 1},   {0.3, 1}    } })
+hl.curve("overshot", { type = "bezier", points = { {0.05, 0.9}, {0.1, 1.05} } })
 
-hl.set_all("animations", {
-  enabled = true,
-})
-
-hl.bezier("linear", 0, 0, 1, 1)
-hl.bezier("snappy", 0.16, 1, 0.3, 1)
-hl.bezier("overshot", 0.05, 0.9, 0.1, 1.05)
-
-hl.animation("windows", true, 3, "snappy")
-hl.animation("windowsOut", true, 3, "linear")
-hl.animation("border", true, 4, "linear")
-hl.animation("borderangle", true, 4, "linear")
-hl.animation("fade", true, 3, "linear")
-hl.animation("workspaces", true, 3, "snappy")
-hl.animation("specialWorkspace", true, 3, "overshot", "slidevert")
-
-hl.blank()
+hl.animation({ leaf = "windows",          enabled = true, speed = 3, bezier = "snappy" })
+hl.animation({ leaf = "windowsOut",       enabled = true, speed = 3, bezier = "linear" })
+hl.animation({ leaf = "border",           enabled = true, speed = 4, bezier = "linear" })
+hl.animation({ leaf = "borderangle",      enabled = true, speed = 4, bezier = "linear" })
+hl.animation({ leaf = "fade",             enabled = true, speed = 3, bezier = "linear" })
+hl.animation({ leaf = "workspaces",       enabled = true, speed = 3, bezier = "snappy" })
+hl.animation({ leaf = "specialWorkspace", enabled = true, speed = 3, bezier = "overshot", style = "slidevert" })

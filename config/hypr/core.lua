@@ -1,36 +1,37 @@
 --[[
-  core.lua — shared, theme-agnostic Hyprland behavior.
+  core.lua — shared, theme-agnostic Hyprland behavior (layer A).
 
-  This is layer A (common functionality) from the project's architecture:
-  no colors, no personal binds, nothing machine-specific. Geometry values
-  that are visual (rounding, blur, gaps) come from THEME and are applied
-  in windows.lua, not here.
+  No colors, no personal binds, nothing machine-specific. Visual geometry
+  (rounding, blur, gaps) comes from THEME and is applied in windows.lua.
 ]]
 
-local hl = require("hl")
+hl.config({
+  general = {
+    layout = "dwindle",
+  },
 
-hl.comment("core.lua: layout + general behavior (shared across themes)")
+  dwindle = {
+    -- dwindle:pseudotile was removed upstream — pseudotiling is per-window
+    -- only now (the `pseudo` dispatcher / a window rule), so there is
+    -- nothing global to set here in its place.
+    preserve_split = true,
+  },
 
-hl.set_all("general", {
-  ["layout"] = "dwindle",
+  misc = {
+    disable_hyprland_logo = true,
+    disable_splash_rendering = true,
+    -- Tearing off by default: avoids visual artifacts, fine for a general
+    -- desktop rice. Games that need it can opt in via a per-window rule.
+    vrr = 0,
+  },
+
+  -- vfr moved from `misc` to `debug` upstream; same setting, new home.
+  debug = {
+    vfr = true,
+  },
+
+  render = {
+    -- direct_scanout is an int now (0 off / 1 on / 2 always), not a bool.
+    direct_scanout = 0,
+  },
 })
-
-hl.set_all("dwindle", {
-  pseudotile = true,
-  preserve_split = true,
-})
-
-hl.set_all("misc", {
-  disable_hyprland_logo = true,
-  disable_splash_rendering = true,
-  -- Tearing off by default: avoids visual artifacts, fine for a general
-  -- desktop rice. Games that need it can opt in via a per-window rule.
-  vfr = true,
-  vrr = 0,
-})
-
-hl.set_all("render", {
-  direct_scanout = false,
-})
-
-hl.blank()

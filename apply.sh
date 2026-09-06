@@ -81,21 +81,70 @@ install_pair() {
 
 if [ "${WANT[hypr]:-0}" = "1" ]; then
   info "hypr"
-  command -v lua >/dev/null 2>&1 || die "The 'lua' interpreter is required to generate hyprland.conf (pacman -S lua)."
-  ensure_dir "$XDG_CONFIG_HOME/hypr"
-  manifest_reset hypr
-  DST="$XDG_CONFIG_HOME/hypr/hyprland.conf"
-  maybe_backup "$DST"
-  LOCAL_ARG=""
-  [ -f "$LOCAL_LUA" ] && LOCAL_ARG="$LOCAL_LUA"
-  if [ "$DRY_RUN" = "1" ]; then
-    log "[dry-run] generate $DST"
-  else
-    lua "$REPO_ROOT/scripts/generate-hyprland-conf.lua" \
-      "$REPO_ROOT" "$REPO_ROOT/themes/$THEME/hypr.lua" "$USER_LUA" "$LOCAL_ARG" > "$DST"
+
+  HYPR_DIR="$XDG_CONFIG_HOME/hypr"
+  RUNTIME_DIR="$HYPR_DIR/cesarmanzocode-rice"
+  ENTRYPOINT="$HYPR_DIR/hyprland.lua"
+
+  ensure_dir "$HYPR_DIR"
+  ensure_dir "$RUNTIME_DIR"
+
+  # Migration: a previous (hyprlang-generator) version of this rice wrote
+  # ~/.config/hypr/hyprland.conf, which Hyprland >= 0.55 never reads. Only
+  # remove it when the OLD manifest proves this rice wrote it — never a
+  # file that merely happens to share the name.
+  OLD_CONF="$HYPR_DIR/hyprland.conf"
+  OLD_HYPR_MANIFEST="$MANIFEST_DIR/hypr.list"
+  if [ -f "$OLD_HYPR_MANIFEST" ] && [ -f "$OLD_CONF" ] && grep -qxF "$OLD_CONF" "$OLD_HYPR_MANIFEST"; then
+    info "removing stale hyprland.conf from a previous (hyprlang) version of this rice"
+    maybe_backup "$OLD_CONF"
+    [ "$DRY_RUN" = "1" ] || rm -f "$OLD_CONF"
   fi
-  manifest_add hypr "$DST"
-  ok "hyprland.conf generated"
+
+  manifest_reset hypr
+
+  # Back up whatever hyprland.lua exists right now — the user's own config,
+  # or a previous run of this rice — before replacing it.
+  maybe_backup "$ENTRYPOINT"
+  HYPRLAND_LUA_BACKUP=""
+  [ "$NO_BACKUP" = "1" ] || HYPRLAND_LUA_BACKUP="$BACKUP_DIR$ENTRYPOINT"
+
+  if [ "$DRY_RUN" = "1" ]; then
+    log "[dry-run] install $ENTRYPOINT + $RUNTIME_DIR/*.lua"
+  else
+    for f in init.lua core.lua input.lua animations.lua windows.lua monitors.lua binds.lua autostart.lua; do
+      atomic_install_file "$REPO_ROOT/config/hypr/$f" "$RUNTIME_DIR/$f"
+      manifest_add hypr "$RUNTIME_DIR/$f"
+    done
+    atomic_install_file "$REPO_ROOT/themes/$THEME/hypr.lua" "$RUNTIME_DIR/theme.lua"
+    manifest_add hypr "$RUNTIME_DIR/theme.lua"
+    atomic_install_file "$REPO_ROOT/config/hypr/entrypoint.lua" "$ENTRYPOINT"
+    manifest_add hypr "$ENTRYPOINT"
+  fi
+  ok "hyprland.lua + runtime modules installed"
+
+  # polkit rides along with hypr (see install.sh); enable its service iff
+  # user.lua actually selected it.
+  if component_enabled polkit; then
+    rice_enable_service "hyprpolkitagent.service"
+  fi
+
+  # Verify + fail safe — only meaningful with a live Hyprland session.
+  if [ "$DRY_RUN" = "0" ] && command -v hyprctl >/dev/null 2>&1 && hyprctl -j monitors >/dev/null 2>&1; then
+    hyprctl reload >/dev/null 2>&1 || true
+    ERRORS="$(hyprctl configerrors 2>/dev/null || true)"
+    if [ -n "$ERRORS" ] && [ "$ERRORS" != "no errors" ] && [ "$ERRORS" != "ok" ]; then
+      err "hyprctl configerrors reported problems after reload:"
+      printf '%s\n' "$ERRORS" >&2
+      if [ -n "$HYPRLAND_LUA_BACKUP" ] && [ -f "$HYPRLAND_LUA_BACKUP" ]; then
+        warn "restoring previous hyprland.lua"
+        cp -a "$HYPRLAND_LUA_BACKUP" "$ENTRYPOINT"
+        hyprctl reload >/dev/null 2>&1 || true
+      fi
+      die "Aborted: new Hyprland config has errors. Previous config restored where a backup existed."
+    fi
+    ok "hyprctl configerrors clean"
+  fi
 fi
 
 # ---- wallpaper asset (shared by hyprlock + hyprpaper) ---------------------
@@ -128,6 +177,7 @@ if [ "${WANT[hypridle]:-0}" = "1" ]; then
   DST="$XDG_CONFIG_HOME/hypr/hypridle.conf"
   install_pair hypridle "$REPO_ROOT/config/hypridle/hypridle.conf.template" "$DST"
   ok "hypridle.conf installed"
+  rice_enable_service "hypridle.service"
 fi
 
 # ---- wallpaper / hyprpaper ------------------------------------------------
@@ -141,6 +191,7 @@ if [ "${WANT[wallpaper]:-0}" = "1" ]; then
   render_template "$REPO_ROOT/config/hyprpaper/hyprpaper.conf.template" "$DST" "@WALLPAPER@" "$WALLPAPER_DST"
   manifest_add wallpaper "$DST"
   ok "wallpaper installed"
+  rice_enable_service "hyprpaper.service"
 fi
 
 # ---- waybar ----------------------------------------------------------
@@ -152,6 +203,7 @@ if [ "${WANT[waybar]:-0}" = "1" ]; then
   install_pair waybar "$REPO_ROOT/config/waybar/style.css" "$XDG_CONFIG_HOME/waybar/style.css"
   install_pair waybar "$REPO_ROOT/themes/$THEME/waybar/colors.css" "$XDG_CONFIG_HOME/waybar/colors.css"
   ok "waybar installed"
+  rice_enable_service "waybar.service"
 fi
 
 # ---- rofi ------------------------------------------------------------
@@ -175,6 +227,7 @@ if [ "${WANT[swaync]:-0}" = "1" ]; then
   install_pair swaync "$REPO_ROOT/config/swaync/style.css" "$XDG_CONFIG_HOME/swaync/style.css"
   install_pair swaync "$REPO_ROOT/themes/$THEME/swaync/colors.css" "$XDG_CONFIG_HOME/swaync/colors.css"
   ok "swaync installed"
+  rice_enable_service "swaync.service"
 fi
 
 # ---- kitty -----------------------------------------------------------
@@ -185,20 +238,6 @@ if [ "${WANT[kitty]:-0}" = "1" ]; then
   install_pair kitty "$REPO_ROOT/config/kitty/kitty.conf" "$XDG_CONFIG_HOME/kitty/kitty.conf"
   install_pair kitty "$REPO_ROOT/themes/$THEME/kitty/colors.conf" "$XDG_CONFIG_HOME/kitty/colors.conf"
   ok "kitty installed"
-fi
-
-# ---- best-effort live reload -------------------------------------------
-
-if [ "$DRY_RUN" = "0" ] && command -v hyprctl >/dev/null 2>&1; then
-  hyprctl reload >/dev/null 2>&1 || true
-  if [ "${WANT[waybar]:-0}" = "1" ] && command -v waybar >/dev/null 2>&1; then
-    pkill -x waybar >/dev/null 2>&1 || true
-    setsid -f waybar >/dev/null 2>&1 || true
-  fi
-  if [ "${WANT[swaync]:-0}" = "1" ] && command -v swaync >/dev/null 2>&1; then
-    pkill -x swaync >/dev/null 2>&1 || true
-    setsid -f swaync >/dev/null 2>&1 || true
-  fi
 fi
 
 echo

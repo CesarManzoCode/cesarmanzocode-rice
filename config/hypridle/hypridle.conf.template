@@ -4,11 +4,17 @@
 ## Adjust timeouts in your own copy after installing if you want them
 ## tighter/looser — this file is copied, not symlinked, so local edits
 ## survive until the next ./apply.sh overwrites it.
+##
+## DPMS is controlled via the current `hl.dsp.dpms` dispatcher through
+## hyprctl (hypridle is a separate binary from Hyprland's own Lua config,
+## so it can only reach dispatchers through the hyprctl IPC socket, not
+## `require`/`hl` directly). `--grace 2` replaces the old
+## `general:grace` config key hyprlock dropped.
 
 general {
-    lock_cmd = pidof hyprlock || hyprlock
+    lock_cmd = pidof hyprlock || hyprlock --grace 2
     before_sleep_cmd = loginctl lock-session
-    after_sleep_cmd = hyprctl dispatch dpms on
+    after_sleep_cmd = hyprctl dispatch 'hl.dsp.dpms({ action = "on" })'
 }
 
 listener {
@@ -18,8 +24,8 @@ listener {
 
 listener {
     timeout = 420
-    on-timeout = hyprctl dispatch dpms off
-    on-resume = hyprctl dispatch dpms on
+    on-timeout = hyprctl dispatch 'hl.dsp.dpms({ action = "off" })'
+    on-resume = hyprctl dispatch 'hl.dsp.dpms({ action = "on" })'
 }
 
 # Suspend is intentionally NOT enabled by default. Uncomment if this

@@ -11,13 +11,9 @@
       },
     }
 
-  Local monitor lines are emitted *after* the generic default below, and
+  Local monitor rules are applied *after* the generic default below, and
   Hyprland applies monitor rules in order, so a specific override wins.
 ]]
-
-local hl = require("hl")
-
-hl.comment("monitors.lua: generic default (override via local.lua)")
 
 hl.monitor({ output = "", mode = "preferred", position = "auto", scale = "auto" })
 
@@ -26,5 +22,3 @@ if type(LOCAL) == "table" and type(LOCAL.monitors) == "table" then
     hl.monitor(m)
   end
 end
-
-hl.blank()

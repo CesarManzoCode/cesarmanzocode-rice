@@ -4,7 +4,9 @@
 configuration {
     modi:                       "drun,run";
     show-icons:                 true;
-    icon-theme:                 "Papirus";
+    /* No icon-theme forced: uses whatever GTK icon theme the system already
+       has (installing Papirus just for this would be a new, unrequested
+       dependency). */
     display-drun:               "Apps";
     drun-display-format:        "{name}";
     font:                       "JetBrainsMono Nerd Font 11";
