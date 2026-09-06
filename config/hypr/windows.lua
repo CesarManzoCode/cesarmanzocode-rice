@@ -68,6 +68,9 @@ hl.window_rule({
   name = "pip-float",
   match = { title = "^(Picture-in-Picture)$" },
   float = true,
-  size = "640x360",
-  move = "100%-w-24 24",
+  -- vec2 fields take two separate expressions, not a packed string
+  -- ("640x360" / "100%-w-24 24" were leftovers from the old hyprlang
+  -- text syntax and fail Hyprland 0.56's native Lua parser).
+  size = { 640, 360 },
+  move = { "monitor_w-window_w-24", "24" },
 })
