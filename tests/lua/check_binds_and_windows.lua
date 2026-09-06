@@ -222,10 +222,11 @@ if ok3 then
   end
   check("every enabled animation references a curve declared via hl.curve()", all_curves_declared)
 
-  -- Spring curves: mass/stiffness/damping all present and > 0 (real
+  -- Spring curves: mass/stiffness/dampening all present and > 0 (real
   -- Hyprland requires each > 0.5; hl_mock.curve() already enforces that at
   -- declaration time, this just confirms the springs this rice actually
-  -- expects to exist do exist and use the modern `damping` key).
+  -- expects to exist do exist and use the key the EXACT installed build
+  -- (0.56.2) actually requires — see hl_mock.lua's own comment on this).
   local EXPECTED_SPRINGS = { "windowSpring", "workspaceSpring", "layerSpring", "specialWorkspaceSpring" }
   for _, name in ipairs(EXPECTED_SPRINGS) do
     local c = hl_mock.curves[name]
@@ -233,19 +234,21 @@ if ok3 then
     if c then
       check("spring '" .. name .. "' has mass > 0", type(c.mass) == "number" and c.mass > 0)
       check("spring '" .. name .. "' has stiffness > 0", type(c.stiffness) == "number" and c.stiffness > 0)
-      check("spring '" .. name .. "' has damping > 0 (via 'damping' key)",
-        type(c.damping) == "number" and c.damping > 0)
+      check("spring '" .. name .. "' has dampening > 0 (via 'dampening' key)",
+        type(c.dampening) == "number" and c.dampening > 0)
     end
   end
 
-  -- The source must spell the key "damping" (Hyprland's real, primary
-  -- field — see LuaBindingsConfigRules.cpp) for every spring it declares,
-  -- never fall back to writing the legacy "dampening" typo alias.
+  -- The source must spell the key "dampening" (confirmed against the real,
+  -- exact installed build — Hyprland 0.56.2 — not upstream source read out
+  -- of context; see animations.lua's own header for the failure this
+  -- corrects) for every spring it declares, never the "damping" spelling
+  -- that this build actually rejects.
   local anim_src = io.open(REPO_ROOT .. "config/hypr/animations.lua", "r")
   local anim_text = anim_src and anim_src:read("*a") or ""
   if anim_src then anim_src:close() end
-  check("animations.lua uses the real 'damping' key, not the legacy 'dampening' typo",
-    anim_text:match("damping%s*=") ~= nil and anim_text:match("[^%a]dampening%s*=") == nil)
+  check("animations.lua uses the 0.56.2-required 'dampening' key, not 'damping'",
+    anim_text:match("dampening%s*=") ~= nil and anim_text:match("[^%a]damping%s*=") == nil)
 
   -- Speed budget: nothing in this rice's normal interaction animations
   -- should be at/above 300ms (speed 3.0) — everything should feel snappy,

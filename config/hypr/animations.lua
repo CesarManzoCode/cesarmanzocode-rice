@@ -19,33 +19,31 @@
   ---------------------------------------------------------------------------
 
   This pass migrates SELECTIVELY to Hyprland's native spring curves
-  (hl.curve({ type = "spring", mass, stiffness, damping })) for the motion
-  that benefits from a touch of real physicality — window open, workspace
-  switch, layer popin — while everything that should read as instantaneous
-  or decisive (window close, move/resize, border focus) stays on a plain
-  bezier. Nothing here is jelly/wobble/looping; every spring below sits at
-  or just under critical damping (damping-ratio ~0.75-0.95), i.e. at most a
-  single, barely-perceptible overshoot, never a bounce.
+  (hl.curve({ type = "spring", mass, stiffness, dampening })) for the
+  motion that benefits from a touch of real physicality — window open,
+  workspace switch, layer popin — while everything that should read as
+  instantaneous or decisive (window close, move/resize, border focus)
+  stays on a plain bezier. Nothing here is jelly/wobble/looping; every
+  spring below sits at or just under critical damping (damping-ratio
+  ~0.75-0.95), i.e. at most a single, barely-perceptible overshoot, never
+  a bounce.
 
-  IMPORTANT — field name verified against the actual Hyprland 0.56 C++
-  source (src/config/lua/bindings/LuaBindingsConfigRules.cpp), not just the
-  wiki prose, because the two disagree:
+  IMPORTANT — field name, corrected after real-machine testing against
+  the EXACT installed build (Hyprland 0.56.2), not source/wiki inference:
 
-    lua_getfield(L, 2, "damping");
-    if (lua_isnil(L, -1)) {
-      lua_pop(L, 1);
-      // Old typo form, please add a deprecation notice if you ever plan on
-      // removing these
-      lua_getfield(L, 2, "dampening");
-    }
-
-  i.e. `damping` is the real, primary key the parser looks for first;
-  `dampening` is only accepted as a legacy fallback for an old typo and is
-  explicitly commented as something to eventually deprecate. This file uses
-  `damping` for that reason — the source is the ground truth, not a wiki
-  paraphrase that happened to list the deprecated spelling. (Both keys
-  parse identically today, so this is a correctness-of-intent choice, not
-  a functional one.)
+  `hl.curve({ type = "spring", ... })` on this build requires `dampening`.
+  Passing `damping` instead fails at load time with "dampening expects a
+  number", which then cascades into "no such spring" errors for every
+  leaf that referenced the curve — confirmed on the real target machine,
+  not assumed. Switching every spring curve below to `dampening` is what
+  made `hyprctl configerrors` come back clean. (An earlier revision of
+  this comment claimed the opposite — that `damping` was the primary key
+  and `dampening` only a legacy fallback — based on reading upstream
+  source out of context; that claim was wrong for this build and has been
+  removed. Do not revert this file's `dampening` key back to `damping`,
+  and do not re-derive this from Hyprland's `main` branch — 0.56.2 is the
+  target, checked against its own real runtime behavior, and that's what
+  every `hl.curve()` call below uses.)
 
   Also verified against source: hl.animation() takes an exclusive `spring`
   OR `bezier` field (never both), a leaf must already exist in Hyprland's
@@ -112,7 +110,10 @@ hl.curve("linear", { type = "bezier", points = { {0, 0}, {1, 1} } })
 -- windowSpring: window open. critical damping ~= 2*sqrt(310) ~= 35.2;
 -- damping 31 -> ratio ~0.88 — a few px of material overshoot, not jelly.
 -- (defaults are monochrome's own tuned values; a theme overrides via
--- THEME.motion.springs.window = { stiffness = ..., damping = ... })
+-- THEME.motion.springs.window's own schema field is spelled "damping" —
+-- see spring_field() above; this is our own THEME table's naming choice,
+-- unrelated to the real Hyprland key "dampening" this file passes to
+-- hl.curve() below)
 hl.curve("windowSpring", {
   type = "spring", mass = 1,
   stiffness = spring_field("window", "stiffness", 310),

@@ -140,6 +140,22 @@ atomic_install_file() {
   mv -f "$tmp" "$dst"
 }
 
+# theme_file_or_shared <theme_specific> <shared_fallback> — echoes whichever
+# exists, preferring the theme-specific one. Lets a theme override the
+# STRUCTURE of a component (Waybar's config.jsonc, Rofi's config.rasi,
+# SwayNC's config.json/style.css — position, layout, geometry), not just
+# its colors, without forcing every theme to ship one. A theme that omits
+# the file (monochrome does, for all of these, on purpose — it's closed)
+# falls back to the shared file exactly as before this mechanism existed.
+theme_file_or_shared() {
+  local theme_specific="$1" shared="$2"
+  if [ -f "$theme_specific" ]; then
+    printf "%s\n" "$theme_specific"
+  else
+    printf "%s\n" "$shared"
+  fi
+}
+
 # render_template <src> <dst> <FIND> <REPLACE> — copy with one literal
 # placeholder substituted (used for @WALLPAPER@ etc).
 render_template() {

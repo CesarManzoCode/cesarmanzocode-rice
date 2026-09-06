@@ -575,6 +575,30 @@ EOF
   if [ -f "themes/$T/brave/manifest.json" ]; then
     check "$T: brave theme staged" test -f "$THOME/.local/share/cesarmanzocode-rice/brave/$T/manifest.json"
   fi
+
+  # Structural overrides (theme_file_or_shared, see scripts/lib/common.sh):
+  # when a theme ships its own waybar/rofi/swaync structure file, the
+  # INSTALLED file must match the theme's, not the shared default — and
+  # when it doesn't ship one, the shared default must still be installed
+  # unchanged (this is monochrome's path, and must never regress).
+  assert_structural_src() {
+    local component_dir="$1" filename="$2" installed="$3"
+    local theme_specific="themes/$T/$component_dir/$filename"
+    local shared="config/$component_dir/$filename"
+    if [ -f "$theme_specific" ]; then
+      check "$T: installed $component_dir/$filename matches theme's own override" \
+        diff -q "$theme_specific" "$installed"
+    else
+      check "$T: installed $component_dir/$filename falls back to the shared default" \
+        diff -q "$shared" "$installed"
+    fi
+  }
+  assert_structural_src waybar config.jsonc "$THOME/.config/waybar/config.jsonc"
+  assert_structural_src waybar style.css    "$THOME/.config/waybar/style.css"
+  assert_structural_src rofi   config.rasi  "$THOME/.config/rofi/config.rasi"
+  assert_structural_src swaync config.json  "$THOME/.config/swaync/config.json"
+  assert_structural_src swaync style.css    "$THOME/.config/swaync/style.css"
+
   rm -rf "$THOME"
 done
 

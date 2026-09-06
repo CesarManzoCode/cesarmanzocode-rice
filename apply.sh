@@ -210,8 +210,14 @@ fi
 if [ "${WANT[waybar]:-0}" = "1" ]; then
   info "waybar"
   manifest_reset waybar
-  install_pair waybar "$REPO_ROOT/config/waybar/config.jsonc" "$XDG_CONFIG_HOME/waybar/config.jsonc"
-  install_pair waybar "$REPO_ROOT/config/waybar/style.css" "$XDG_CONFIG_HOME/waybar/style.css"
+  # A theme may override STRUCTURE (bar position/orientation/modules), not
+  # just colors — themes/$THEME/waybar/config.jsonc|style.css, when
+  # present, win over the shared defaults. monochrome ships neither, so it
+  # keeps using config/waybar/{config.jsonc,style.css} exactly as before.
+  WAYBAR_CONFIG_SRC="$(theme_file_or_shared "$REPO_ROOT/themes/$THEME/waybar/config.jsonc" "$REPO_ROOT/config/waybar/config.jsonc")"
+  WAYBAR_STYLE_SRC="$(theme_file_or_shared "$REPO_ROOT/themes/$THEME/waybar/style.css" "$REPO_ROOT/config/waybar/style.css")"
+  install_pair waybar "$WAYBAR_CONFIG_SRC" "$XDG_CONFIG_HOME/waybar/config.jsonc"
+  install_pair waybar "$WAYBAR_STYLE_SRC" "$XDG_CONFIG_HOME/waybar/style.css"
   install_pair waybar "$REPO_ROOT/themes/$THEME/waybar/colors.css" "$XDG_CONFIG_HOME/waybar/colors.css"
   ok "waybar installed"
   rice_enable_service "waybar.service"
@@ -222,7 +228,11 @@ fi
 if [ "${WANT[rofi]:-0}" = "1" ]; then
   info "rofi"
   manifest_reset rofi
-  install_pair rofi "$REPO_ROOT/config/rofi/config.rasi" "$XDG_CONFIG_HOME/rofi/config.rasi"
+  # As with waybar: themes/$THEME/rofi/config.rasi overrides layout/geometry
+  # (window anchor/location/width, listview shape, etc.) when present;
+  # monochrome has none, so it keeps config/rofi/config.rasi unchanged.
+  ROFI_CONFIG_SRC="$(theme_file_or_shared "$REPO_ROOT/themes/$THEME/rofi/config.rasi" "$REPO_ROOT/config/rofi/config.rasi")"
+  install_pair rofi "$ROFI_CONFIG_SRC" "$XDG_CONFIG_HOME/rofi/config.rasi"
   install_pair rofi "$REPO_ROOT/themes/$THEME/rofi/colors.rasi" "$XDG_CONFIG_HOME/rofi/colors.rasi"
   install_pair rofi "$REPO_ROOT/config/rofi/power-menu.sh" "$XDG_CONFIG_HOME/rofi/power-menu.sh"
   [ "$DRY_RUN" = "1" ] || chmod +x "$XDG_CONFIG_HOME/rofi/power-menu.sh"
@@ -234,8 +244,14 @@ fi
 if [ "${WANT[swaync]:-0}" = "1" ]; then
   info "swaync"
   manifest_reset swaync
-  install_pair swaync "$REPO_ROOT/config/swaync/config.json" "$XDG_CONFIG_HOME/swaync/config.json"
-  install_pair swaync "$REPO_ROOT/config/swaync/style.css" "$XDG_CONFIG_HOME/swaync/style.css"
+  # Same override mechanism: themes/$THEME/swaync/{config.json,style.css}
+  # win when present (position/margins/width/card geometry can differ per
+  # theme, e.g. clearing a left dock vs. a top bar). monochrome has
+  # neither, so it keeps config/swaync/{config.json,style.css} unchanged.
+  SWAYNC_CONFIG_SRC="$(theme_file_or_shared "$REPO_ROOT/themes/$THEME/swaync/config.json" "$REPO_ROOT/config/swaync/config.json")"
+  SWAYNC_STYLE_SRC="$(theme_file_or_shared "$REPO_ROOT/themes/$THEME/swaync/style.css" "$REPO_ROOT/config/swaync/style.css")"
+  install_pair swaync "$SWAYNC_CONFIG_SRC" "$XDG_CONFIG_HOME/swaync/config.json"
+  install_pair swaync "$SWAYNC_STYLE_SRC" "$XDG_CONFIG_HOME/swaync/style.css"
   install_pair swaync "$REPO_ROOT/themes/$THEME/swaync/colors.css" "$XDG_CONFIG_HOME/swaync/colors.css"
   ok "swaync installed"
   rice_enable_service "swaync.service"

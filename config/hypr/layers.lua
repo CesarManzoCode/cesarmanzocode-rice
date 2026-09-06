@@ -51,40 +51,68 @@
   the right edge instead of the nearest-edge default.
 ]]
 
+--[[
+  PER-THEME LAYER PLACEMENT (foundation for arctic-glass/ember-forge/
+  ivory-paper/violet-night structural shells — see themes/*/hypr.lua)
+
+  THEME.layers is OPTIONAL. Every default below is exactly this file's
+  original hardcoded rofi/waybar/swaync-control-center rules, so a theme
+  that omits `layers` (monochrome does, on purpose) behaves exactly as
+  before. A theme whose shell actually docks Waybar to a different edge
+  (Ember's left dock, Violet's right rail) or moves Rofi off-center
+  overrides only the `animation`/`ignore_alpha` fields that placement
+  needs — never the namespace match itself, which stays tied to the real,
+  verified `hyprctl layers` namespace regardless of theme.
+]]
+local layers_cfg = THEME.layers or {}
+
+local function layer_field(name, key, default)
+  local t = layers_cfg[name]
+  if t == nil or t[key] == nil then return default end
+  return t[key]
+end
+
 hl.layer_rule({
   name = "blur-rofi",
   match = { namespace = "^rofi$" },
   blur = true,
-  ignore_alpha = 0.2,
-  -- Rofi is centered — a lateral slide makes no sense here. A tight popin
-  -- reads as an elegant, deliberate appearance instead.
-  animation = "popin 96%",
+  ignore_alpha = layer_field("rofi", "ignore_alpha", 0.2),
+  -- Default: Rofi is centered — a lateral slide makes no sense here, so a
+  -- tight popin reads as an elegant, deliberate appearance instead. A
+  -- theme that anchors Rofi to an edge instead overrides this to a
+  -- matching "slide <edge>".
+  animation = layer_field("rofi", "animation", "popin 96%"),
 })
 
 hl.layer_rule({
   name = "blur-waybar",
   match = { namespace = "^waybar$" },
   blur = true,
-  ignore_alpha = 0.2,
-  -- Waybar stays mapped for the whole session; this only plays on the rare
+  ignore_alpha = layer_field("waybar", "ignore_alpha", 0.2),
+  -- Default: a horizontal top bar slides in from the top. A theme whose
+  -- shell docks Waybar to the left/right edge instead (vertical dock/rail)
+  -- overrides this to "slide left"/"slide right" to match. Waybar stays
+  -- mapped for the whole session either way; this only plays on the rare
   -- occasions its layer surface is actually created/destroyed (startup,
   -- reload), never during normal use — not a continuous/looping effect.
-  animation = "slide top",
+  animation = layer_field("waybar", "animation", "slide top"),
 })
 
 hl.layer_rule({
   name = "blur-swaync-control-center",
   match = { namespace = "^swaync-control-center$" },
   blur = true,
-  -- Slightly lower than rofi/waybar: this surface's real panel background
-  -- alpha is lower once blur is live (see swaync colors.css @bg), so the
-  -- threshold needs to sit a bit further down to still catch it while
-  -- still skipping the surrounding transparent fullscreen padding.
-  ignore_alpha = 0.15,
-  -- The control center panel docks to the right edge of the screen, so it
-  -- should visibly travel in from the right rather than just fading/
-  -- popping in place.
-  animation = "slide right",
+  -- Slightly lower than rofi/waybar's default: this surface's real panel
+  -- background alpha is lower once blur is live (see swaync colors.css
+  -- @bg), so the threshold needs to sit a bit further down to still catch
+  -- it while still skipping the surrounding transparent fullscreen
+  -- padding. A theme with a notably different @bg alpha may need its own
+  -- value here.
+  ignore_alpha = layer_field("swaync", "ignore_alpha", 0.15),
+  -- Default: the control center docks to the right edge, so it travels in
+  -- from the right. Kept theme-overridable for a shell that positions it
+  -- elsewhere (see each theme's swaync/config.json positionX/Y).
+  animation = layer_field("swaync", "animation", "slide right"),
 })
 
 --[[

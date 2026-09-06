@@ -148,10 +148,14 @@ function M.animation(spec)
 end
 
 -- hl.curve: bezier curves need { points = {...} }; spring curves need
--- numeric mass/stiffness/damping, each > 0.5 (Hyprland's own real
--- constraint — see LuaBindingsConfigRules.cpp). `dampening` is accepted
--- too, purely as the legacy typo alias the real parser also still honors,
--- but `damping` is the primary key this repo's own animations.lua uses.
+-- numeric mass/stiffness/dampening, each > 0.5 (Hyprland's own real
+-- constraint). Confirmed against the EXACT installed build (Hyprland
+-- 0.56.2) on real hardware: that build's Lua binding requires
+-- `dampening` — passing `damping` fails to load ("dampening expects a
+-- number") and cascades into "no such spring" errors. `damping` is
+-- accepted here too (so a mock spec written either way still validates),
+-- but `dampening` is the key this repo's own animations.lua actually
+-- uses, and the one every real spring below must resolve to.
 function M.curve(name, spec)
   assert(type(name) == "string" and name ~= "", "hl.curve: name must be a non-empty string")
   assert(type(spec) == "table", "hl.curve: spec must be a table")
