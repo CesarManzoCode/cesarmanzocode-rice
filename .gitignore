@@ -1,0 +1,16 @@
+# Personal/machine-specific state never lives in the repo — it's written
+# to ~/.config/cesarmanzocode-rice/ instead. These patterns are a safety
+# net in case something ends up here by accident during development.
+user.lua
+local.lua
+*.local.lua
+state.sh
+
+# OS / editor noise
+.DS_Store
+*.swp
+*~
+
+# Local scratch
+/tmp/
+*.bak
