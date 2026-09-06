@@ -1,0 +1,13 @@
+/* ember-forge — Waybar palette (visual layer only).
+   bar_bg alpha kept higher than monochrome's 0.8 — this theme trades
+   glassy blur-through for a firmer, more opaque bar plate; real layer
+   blur (namespace ^waybar$, see config/hypr/layers.lua) still shows
+   through faintly, it just isn't the point here. */
+@define-color bar_bg alpha(#140f0b, 0.92);
+@define-color bar_border #3d2e23;
+@define-color bg #0c0907;
+@define-color surface_alt #281e16;
+@define-color fg #eae0d5;
+@define-color fg_strong #fff6ec;
+@define-color muted #9c8570;
+@define-color subtle #4f3f32;
