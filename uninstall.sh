@@ -76,6 +76,17 @@ for component in "${COMPONENTS[@]}"; do
     fi
   done < "$list_file"
   rm -f "$list_file"
+
+  # Only disables a systemd --user service THIS rice enabled (see
+  # rice_enable_service in scripts/lib/common.sh); anything the user or
+  # another tool already had enabled is left exactly as it was.
+  case "$component" in
+    hypr)      rice_disable_service_if_owned "hyprpolkitagent.service" ;;
+    waybar)    rice_disable_service_if_owned "waybar.service" ;;
+    swaync)    rice_disable_service_if_owned "swaync.service" ;;
+    wallpaper) rice_disable_service_if_owned "hyprpaper.service" ;;
+    hypridle)  rice_disable_service_if_owned "hypridle.service" ;;
+  esac
 done
 
 echo

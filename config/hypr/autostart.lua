@@ -1,51 +1,35 @@
 --[[
-  autostart.lua — exec-once entries, gated strictly by USER.components.
+  autostart.lua — Hyprland-side startup, deliberately minimal.
 
-  A component that was not selected at install time must never be
-  autostarted, even if it happens to be installed on the system for
-  unrelated reasons.
+  waybar, swaync, hyprpaper, hypridle and hyprpolkitagent are all managed
+  as systemd --user services under this project's UWSM lifecycle (enabled
+  by install.sh, restarted by apply.sh when their config changes) — see
+  scripts/lib/common.sh. Hyprland must never *also* exec them, or a second
+  instance appears on every login/reload; that duplication was the actual
+  bug behind the components "appearing twice" reports.
+
+  cliphist has no upstream systemd user service, so its watchers are the
+  one thing still started here — gated strictly by USER.components, and
+  wrapped in `uwsm app --` when available so they get correct
+  session/cgroup lifecycle under UWSM (falling back to a plain exec
+  otherwise, e.g. outside a UWSM session).
 ]]
-
-local hl = require("hl")
 
 assert(type(USER) == "table", "autostart.lua requires a USER table")
 
-hl.comment("autostart.lua: only selected components")
-
 local c = USER.components or {}
 
-if c.waybar then
-  hl.exec_once("waybar")
-end
-
-if c.swaync then
-  hl.exec_once("swaync")
-end
-
--- The public/installer-facing component name is "wallpaper" (see
--- install.sh, apply.sh, user.lua.example); hyprpaper is just the binary
--- it drives. Must match that key exactly, or the wallpaper daemon never
--- autostarts even though everything else believes it's enabled.
-if c.wallpaper then
-  hl.exec_once("hyprpaper")
-end
-
-if c.hypridle then
-  hl.exec_once("hypridle")
-end
-
--- Polkit agent is independent of any single visual component but only
--- worth starting if the user opted into the shell stack at all.
-if c.polkit then
-  hl.exec_once("/usr/lib/polkit-kde-authentication-agent-1")
+local function launch(cmd)
+  hl.exec_cmd(
+    "sh -c 'command -v uwsm >/dev/null 2>&1 && exec uwsm app -- " .. cmd ..
+    " || exec " .. cmd .. "'"
+  )
 end
 
 if c.cliphist then
-  -- text + image history; single watcher per type, started once by Hyprland
-  -- itself (not re-spawned on config reload since exec-once is idempotent
-  -- per Hyprland session).
-  hl.exec_once("wl-paste --type text --watch cliphist store")
-  hl.exec_once("wl-paste --type image --watch cliphist store")
+  hl.on("hyprland.start", function()
+    -- text + image history; single watcher per type.
+    launch("wl-paste --type text --watch cliphist store")
+    launch("wl-paste --type image --watch cliphist store")
+  end)
 end
-
-hl.blank()

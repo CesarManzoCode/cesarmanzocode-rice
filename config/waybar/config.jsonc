@@ -20,9 +20,7 @@
   },
 
   "hyprland/workspaces": {
-    "format": "{icon}",
-    "format-icons": { "default": "", "active": "", "special:magic": "" },
-    "on-click": "activate",
+    "format": "{id}",
     "persistent-workspaces": { "*": 5 }
   },
 

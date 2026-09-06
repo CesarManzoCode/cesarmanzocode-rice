@@ -20,13 +20,18 @@ never overwrites your preferences.
 
 - Arch Linux (automatic package installation; other distros can still use
   `--skip-packages` and install the stack manually)
-- Hyprland, `lua` (used to generate `hyprland.conf` from the Lua modules —
-  see [Why Lua?](#why-lua) below)
-- Bash — no Python/Node/Ansible/Nix/Stow/chezmoi required at runtime
+- Hyprland >= 0.55 (native Lua config — see [Why Lua?](#why-lua) below),
+  ideally run under UWSM
+- Bash — no Python/Node/Ansible/Nix/Stow/chezmoi required at runtime, and
+  no standalone `lua` interpreter either: Hyprland's own embedded Lua
+  parses everything this rice installs
 
-Stack this rice targets: Hyprland, Waybar, Rofi, SwayNC, hyprpaper,
+Stack this rice targets: Hyprland, UWSM, Waybar, Rofi, SwayNC, hyprpaper,
 hyprlock, hypridle, hyprpolkitagent, Kitty, PipeWire/WirePlumber, grim,
-slurp, cliphist, JetBrains Mono Nerd Font, Noto fonts.
+slurp, cliphist, JetBrains Mono Nerd Font, Noto fonts. Where a component
+ships a systemd `--user` unit (waybar, swaync, hyprpaper, hypridle,
+hyprpolkitagent), that unit — not Hyprland's own config — is what starts
+it; see [Autostart & UWSM](#autostart--uwsm) below.
 
 ## Quick install
 
@@ -82,10 +87,10 @@ anything else — as your terminal app).
 
 Your app choices and keybinds are **not** hardcoded anywhere in a theme or
 in `config/`. They live in `~/.config/cesarmanzocode-rice/user.lua`,
-written by `install.sh` and read every time `apply.sh` regenerates
-`hyprland.conf`. See [`user/user.lua.example`](user/user.lua.example) for
-the full schema — you can hand-edit your copy directly instead of
-re-running the installer.
+written by `install.sh` and read by Hyprland itself every time it (re)loads
+`~/.config/hypr/hyprland.lua`. See
+[`user/user.lua.example`](user/user.lua.example) for the full schema — you
+can hand-edit your copy directly instead of re-running the installer.
 
 Keybind syntax is the obvious one: `SUPER+T`, `SUPER+SHIFT+S`,
 `ALT+RETURN`. The installer validates it, rejects empty binds, and
@@ -161,8 +166,9 @@ return {
 ```
 
 Without it, the default monitor rule is fully generic
-(`monitor = ,preferred,auto,auto`) and nothing is hardcoded to any
-specific output, resolution, refresh rate, or username.
+(`hl.monitor({ output = "", mode = "preferred", position = "auto", scale = "auto" })`)
+and nothing is hardcoded to any specific output, resolution, refresh rate,
+or username.
 
 ## Reapplying after `git pull`
 
@@ -171,8 +177,15 @@ git pull
 ./apply.sh
 ```
 
-This regenerates everything from the current repo + your existing
+This reinstalls everything from the current repo + your existing
 `user.lua`/`local.lua` — apps, binds, and local overrides all survive.
+Also the safe way to pick up this project's Hyprland-runtime migration if
+you installed an older version of this rice: it backs up whatever
+`~/.config/hypr/hyprland.lua` currently exists, removes only the
+`hyprland.conf` that a previous version of this rice generated (verified
+against its own manifest, never a same-named file you wrote yourself), and
+restores the previous config automatically if `hyprctl configerrors`
+reports problems after reload.
 
 ```sh
 ./apply.sh monochrome          # switch theme, keep your apps/binds
@@ -198,13 +211,34 @@ Before overwriting anything, existing files are copied to
 preserving their original path underneath. Nothing is ever silently
 deleted.
 
+## Autostart & UWSM
+
+Under UWSM, a daemon that ships a systemd `--user` unit should be started
+by that unit, not by the compositor — running both would spawn a
+duplicate instance on every login. So:
+
+| Component        | Started by                    |
+|-------------------|-------------------------------|
+| Waybar            | `waybar.service`               |
+| SwayNC             | `swaync.service`                |
+| hyprpaper           | `hyprpaper.service`              |
+| hypridle             | `hypridle.service`                |
+| hyprpolkitagent       | `hyprpolkitagent.service`           |
+| cliphist watchers      | Hyprland's `hyprland.start` hook (no upstream unit), via `uwsm app --` when available |
+
+`apply.sh` enables each selected component's service the first time (never
+touching one you already had enabled yourself) and restarts it on later
+re-applies to pick up config changes; `uninstall.sh` disables only the
+services it enabled.
+
 ## Project structure
 
 ```
-config/            shared, theme-agnostic app configs
+config/            shared, theme-agnostic app configs + the Hyprland
+                    Lua runtime modules (config/hypr/)
 themes/monochrome/ colors, geometry, wallpaper — visual only
 wallpapers/        committed PNG wallpapers (+ dev-only generator script)
-scripts/           installer library code, the Hyprland-conf generator
+scripts/           installer library code (bash), no code generation
 user/              user.lua.example (schema for your real, unversioned copy)
 tests/             bash -n / shellcheck / end-to-end checks, no framework
 install.sh apply.sh uninstall.sh
@@ -212,15 +246,20 @@ install.sh apply.sh uninstall.sh
 
 ## Why Lua?
 
-Hyprland reads a config format called hyprlang, not Lua. What lives under
-`config/hypr/*.lua` is a small DSL (`config/hypr/hl.lua`) that lets the
-Hyprland config be *written* in Lua while still being *read* by Hyprland
-as a normal, generated `hyprland.conf`. `scripts/generate-hyprland-conf.lua`
-composes core/input/animations/windows/monitors/binds/autostart modules
-plus the active theme and your `user.lua`/`local.lua` into one file — run
-automatically by `apply.sh`. This keeps the config maintainable and
-modular without inventing a new runtime dependency beyond the `lua`
-interpreter itself.
+Hyprland >= 0.55 reads `~/.config/hypr/hyprland.lua` as native Lua —
+hyprlang (the older, hyprlang-text config format) is deprecated. `apply.sh`
+installs a small entrypoint at that path
+([`config/hypr/entrypoint.lua`](config/hypr/entrypoint.lua)) that just
+`require()`s the real modules — `core`, `input`, `animations`, `windows`,
+`monitors`, `binds`, `autostart` — installed alongside it under
+`~/.config/hypr/cesarmanzocode-rice/`, plus the active theme
+(`theme.lua`, copied from `themes/<name>/hypr.lua`). Those modules call
+Hyprland's own `hl.config()` / `hl.bind()` / `hl.dsp.*` / `hl.monitor()` /
+`hl.window_rule()` API directly — there is no code generator, and no
+separate `lua` interpreter involved; Hyprland parses and runs this Lua
+itself. `user.lua`/`local.lua` are read from
+`~/.config/cesarmanzocode-rice/` at that point, same as before the
+migration.
 
 ## Testing
 

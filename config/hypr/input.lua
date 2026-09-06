@@ -11,11 +11,8 @@
     }
 ]]
 
-local hl = require("hl")
-
-hl.comment("input.lua: keyboard + pointer behavior")
-
 local input_overrides = (type(LOCAL) == "table" and LOCAL.input) or {}
+local touchpad_overrides = input_overrides.touchpad or {}
 
 local input_defaults = {
   kb_layout = "latam",
@@ -23,20 +20,20 @@ local input_defaults = {
   sensitivity = 0,
   accel_profile = "flat",
 }
-for k, v in pairs(input_overrides) do input_defaults[k] = v end
+for k, v in pairs(input_overrides) do
+  if k ~= "touchpad" then input_defaults[k] = v end
+end
 
-hl.set_all("input", input_defaults)
-
-local touchpad_overrides = (type(LOCAL) == "table" and LOCAL.touchpad) or {}
 local touchpad_defaults = {
   natural_scroll = false,
   disable_while_typing = true,
 }
 for k, v in pairs(touchpad_overrides) do touchpad_defaults[k] = v end
-hl.set_all("input:touchpad", touchpad_defaults)
+input_defaults.touchpad = touchpad_defaults
 
-hl.set_all("cursor", {
-  inactive_timeout = 0,
+hl.config({
+  input = input_defaults,
+  cursor = {
+    inactive_timeout = 0,
+  },
 })
-
-hl.blank()

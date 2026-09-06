@@ -43,7 +43,7 @@ window#waybar {
   color: @bg;
 }
 
-#workspaces button.hover {
+#workspaces button.workspace-hover {
   background-color: @surface_alt;
   color: @fg_strong;
 }
