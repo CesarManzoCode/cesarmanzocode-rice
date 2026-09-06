@@ -82,6 +82,19 @@ check "generic monitor line present" \
   grep -q "^monitor = ,preferred,auto,auto$" "$HOME1/.config/hypr/hyprland.conf"
 check "waybar installed" test -f "$HOME1/.config/waybar/config.jsonc"
 
+echo "== autostart: defaults enable every selected component's exec-once =="
+check "waybar autostarts"  grep -q "^exec-once = waybar$" "$HOME1/.config/hypr/hyprland.conf"
+check "swaync autostarts"  grep -q "^exec-once = swaync$" "$HOME1/.config/hypr/hyprland.conf"
+check "hyprpaper autostarts (wallpaper component)" \
+  grep -q "^exec-once = hyprpaper$" "$HOME1/.config/hypr/hyprland.conf"
+check "hypridle autostarts" grep -q "^exec-once = hypridle$" "$HOME1/.config/hypr/hyprland.conf"
+check "polkit agent autostarts" \
+  grep -q "^exec-once = /usr/lib/polkit-kde-authentication-agent-1$" "$HOME1/.config/hypr/hyprland.conf"
+check "cliphist text watcher autostarts" \
+  grep -q "^exec-once = wl-paste --type text --watch cliphist store$" "$HOME1/.config/hypr/hyprland.conf"
+check "cliphist image watcher autostarts" \
+  grep -q "^exec-once = wl-paste --type image --watch cliphist store$" "$HOME1/.config/hypr/hyprland.conf"
+
 echo "== idempotence: re-apply produces byte-identical output =="
 cp "$HOME1/.config/hypr/hyprland.conf" /tmp/rice-first.$$
 check "re-run apply.sh" env HOME="$HOME1" XDG_CONFIG_HOME="$HOME1/.config" \
@@ -120,6 +133,12 @@ check "waybar was NOT installed" bash -c "[ ! -e '$HOME2/.config/waybar' ]"
 check "kitty was NOT installed" bash -c "[ ! -e '$HOME2/.config/kitty' ]"
 check "swaync was NOT installed" bash -c "[ ! -e '$HOME2/.config/swaync' ]"
 check "rofi WAS installed" test -f "$HOME2/.config/rofi/config.rasi"
+check "waybar exec-once absent (component disabled)" \
+  bash -c "! grep -q '^exec-once = waybar\$' '$HOME2/.config/hypr/hyprland.conf'"
+check "hyprpaper exec-once absent (wallpaper component disabled)" \
+  bash -c "! grep -q '^exec-once = hyprpaper\$' '$HOME2/.config/hypr/hyprland.conf'"
+check "hypridle exec-once absent (component disabled)" \
+  bash -c "! grep -q '^exec-once = hypridle\$' '$HOME2/.config/hypr/hyprland.conf'"
 rm -rf "$HOME2"
 
 echo "== duplicate bind detection =="

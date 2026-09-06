@@ -29,7 +29,9 @@ return {
     kitty     = true,
     hyprlock  = true,
     hypridle  = true,
-    hyprpaper = true,
+    -- "wallpaper" gates hyprpaper autostart (config/hypr/autostart.lua);
+    -- it's named after the installer-facing component, not the binary.
+    wallpaper = true,
     polkit    = true,
     cliphist  = true,
   },
