@@ -79,6 +79,10 @@ end
 -- numeric ignore_alpha is given, it must sit within layer-shell's valid
 -- 0..1 alpha-threshold range (the shape this repo actually sends; not a
 -- reimplementation of every field Hyprland's real layer-rule accepts).
+-- `animation`, when given, must be a non-empty string (Hyprland's own
+-- LAYER_RULE_EFFECT_ANIMATION field — a style string like "popin 95%" or
+-- "slide right", validated more specifically by check_binds_and_windows.lua
+-- against the animation-style grammar itself).
 function M.layer_rule(rule)
   assert(type(rule) == "table", "hl.layer_rule: rule must be a table")
   assert(type(rule.match) == "table" and type(rule.match.namespace) == "string"
@@ -87,6 +91,10 @@ function M.layer_rule(rule)
     assert(type(rule.ignore_alpha) == "number" and rule.ignore_alpha >= 0 and rule.ignore_alpha <= 1,
       string.format("hl.layer_rule: ignore_alpha must be a number in [0, 1], got %s",
         tostring(rule.ignore_alpha)))
+  end
+  if rule.animation ~= nil then
+    assert(type(rule.animation) == "string" and rule.animation ~= "",
+      "hl.layer_rule: animation must be a non-empty string")
   end
   M.layer_rules[#M.layer_rules + 1] = rule
 end
@@ -99,26 +107,66 @@ function M.config(spec)
   M.configs[#M.configs + 1] = spec
 end
 
--- speed must be a positive number (deciseconds) and leaf/bezier must be
--- non-empty strings — the shape animations.lua actually sends, and the
--- part a plain loadfile() syntax check cannot catch (a stray string like
--- speed = "2.0" parses fine as Lua but is exactly the kind of thing that
--- only shows up wrong against the real Hyprland parser).
+-- speed must be a positive number (deciseconds) and leaf/bezier|spring must
+-- be non-empty strings referencing a real, already-declared curve — the
+-- shape animations.lua actually sends, and the part a plain loadfile()
+-- syntax check cannot catch (a stray string like speed = "2.0" parses fine
+-- as Lua but is exactly the kind of thing that only shows up wrong against
+-- the real Hyprland parser). Real Hyprland requires exactly one of
+-- bezier/spring — never both, never neither, when enabled.
 function M.animation(spec)
   assert(type(spec) == "table", "hl.animation: spec must be a table")
   assert(type(spec.leaf) == "string" and spec.leaf ~= "", "hl.animation: leaf must be a non-empty string")
+  if spec.enabled == false then
+    -- Mirrors the real hl.animation: a disabled leaf short-circuits before
+    -- speed/bezier/spring are required at all.
+    M.animations[#M.animations + 1] = spec
+    return
+  end
   assert(type(spec.speed) == "number" and spec.speed > 0, string.format(
     "hl.animation: leaf %q speed must be a positive number, got %s", spec.leaf, tostring(spec.speed)))
+  assert(not (spec.bezier and spec.spring),
+    string.format("hl.animation: leaf %q must not set both bezier and spring", spec.leaf))
   if spec.bezier ~= nil then
     assert(type(spec.bezier) == "string" and spec.bezier ~= "",
       string.format("hl.animation: leaf %q bezier must be a non-empty string", spec.leaf))
+    assert(M.curves[spec.bezier] and M.curves[spec.bezier].type == "bezier", string.format(
+      "hl.animation: leaf %q references unknown bezier %q", spec.leaf, spec.bezier))
+  elseif spec.spring ~= nil then
+    assert(type(spec.spring) == "string" and spec.spring ~= "",
+      string.format("hl.animation: leaf %q spring must be a non-empty string", spec.leaf))
+    assert(M.curves[spec.spring] and M.curves[spec.spring].type == "spring", string.format(
+      "hl.animation: leaf %q references unknown spring %q", spec.leaf, spec.spring))
+  else
+    error(string.format("hl.animation: leaf %q requires bezier or spring", spec.leaf))
+  end
+  if spec.style ~= nil then
+    assert(type(spec.style) == "string" and spec.style ~= "",
+      string.format("hl.animation: leaf %q style must be a non-empty string", spec.leaf))
   end
   M.animations[#M.animations + 1] = spec
 end
 
+-- hl.curve: bezier curves need { points = {...} }; spring curves need
+-- numeric mass/stiffness/damping, each > 0.5 (Hyprland's own real
+-- constraint — see LuaBindingsConfigRules.cpp). `dampening` is accepted
+-- too, purely as the legacy typo alias the real parser also still honors,
+-- but `damping` is the primary key this repo's own animations.lua uses.
 function M.curve(name, spec)
   assert(type(name) == "string" and name ~= "", "hl.curve: name must be a non-empty string")
-  assert(type(spec) == "table" and type(spec.points) == "table", "hl.curve: spec.points must be a table")
+  assert(type(spec) == "table", "hl.curve: spec must be a table")
+  if spec.type == "spring" then
+    local damping = spec.damping
+    if damping == nil then damping = spec.dampening end
+    assert(type(spec.mass) == "number" and spec.mass > 0.5,
+      string.format("hl.curve(%q): mass must be a number > 0.5", name))
+    assert(type(spec.stiffness) == "number" and spec.stiffness > 0.5,
+      string.format("hl.curve(%q): stiffness must be a number > 0.5", name))
+    assert(type(damping) == "number" and damping > 0.5,
+      string.format("hl.curve(%q): damping (or legacy dampening) must be a number > 0.5", name))
+  else
+    assert(type(spec.points) == "table", "hl.curve: spec.points must be a table")
+  end
   M.curves[name] = spec
 end
 
