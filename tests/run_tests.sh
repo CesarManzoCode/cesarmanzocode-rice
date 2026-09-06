@@ -166,6 +166,92 @@ check "swaync control-center-height is -1 (content-fit)" \
 check "swaync config.json is valid JSON" \
   bash -c 'python3 -c "import json; json.load(open(\"config/swaync/config.json\"))"'
 
+echo "== v3: brave theme (manifest-only extension, no code) =="
+BRAVE_MANIFEST="themes/monochrome/brave/manifest.json"
+check "brave manifest.json is valid JSON" \
+  bash -c "python3 -c \"import json; json.load(open('$BRAVE_MANIFEST'))\""
+check "brave manifest_version == 3" \
+  bash -c "python3 -c \"
+import json
+d = json.load(open('$BRAVE_MANIFEST'))
+assert d['manifest_version'] == 3
+\""
+check "brave manifest has a 'theme' key with 'colors'" \
+  bash -c "python3 -c \"
+import json
+d = json.load(open('$BRAVE_MANIFEST'))
+assert 'theme' in d and 'colors' in d['theme'] and len(d['theme']['colors']) > 0
+\""
+check "brave manifest has no permissions/host_permissions/content_scripts/background" \
+  bash -c "python3 -c \"
+import json
+d = json.load(open('$BRAVE_MANIFEST'))
+for forbidden in ('permissions', 'host_permissions', 'content_scripts', 'background'):
+    assert forbidden not in d, forbidden
+\""
+check "brave manifest only uses documented, current Chromium theme.colors keys" \
+  bash -c "python3 -c \"
+import json
+d = json.load(open('$BRAVE_MANIFEST'))
+# Verified against chrome/browser/themes/browser_theme_pack.cc's
+# kOverwritableColorTable on the Chromium main branch — see layers.lua-style
+# commit message for the source. Not a guess, not copied for volume.
+allowed = {
+    'background_tab', 'background_tab_inactive',
+    'background_tab_incognito', 'background_tab_incognito_inactive',
+    'bookmark_text', 'button_background',
+    'frame', 'frame_inactive', 'frame_incognito', 'frame_incognito_inactive',
+    'ntp_background', 'ntp_header', 'ntp_link', 'ntp_text',
+    'omnibox_background', 'omnibox_text',
+    'tab_background_text', 'tab_background_text_inactive',
+    'tab_background_text_incognito', 'tab_background_text_incognito_inactive',
+    'tab_text', 'toolbar', 'toolbar_button_icon', 'toolbar_text',
+}
+used = set(d['theme']['colors'].keys())
+assert used <= allowed, used - allowed
+\""
+check "every brave theme color is a 3-element [0-255] RGB array" \
+  bash -c "python3 -c \"
+import json
+d = json.load(open('$BRAVE_MANIFEST'))
+for name, rgb in d['theme']['colors'].items():
+    assert isinstance(rgb, list) and len(rgb) == 3, name
+    for c in rgb:
+        assert isinstance(c, int) and 0 <= c <= 255, (name, c)
+\""
+check "no color outside the monochrome identity (no orange/blue/beige/purple hue)" \
+  bash -c "python3 -c \"
+import json, colorsys
+d = json.load(open('$BRAVE_MANIFEST'))
+for name, rgb in d['theme']['colors'].items():
+    r, g, b = (c / 255 for c in rgb)
+    h, s, v = colorsys.rgb_to_hsv(r, g, b)
+    # Pure grays (s == 0) are always fine; this theme is monochrome, so any
+    # saturated color at all is the regression this guards against — not
+    # just orange/blue/beige/purple specifically.
+    assert s < 0.05, (name, rgb, 'saturation', s)
+\""
+check "no JS in the brave theme (theme-only extension, no code)" \
+  bash -c '! find themes/monochrome/brave -name "*.js" | grep -q .'
+check "brave theme has no icons/background/content-script directories" \
+  bash -c '! find themes/monochrome/brave -mindepth 1 -type d | grep -q .'
+
+check "apply.sh stages the brave theme under XDG_DATA_HOME, not the Brave profile" \
+  grep -q 'XDG_DATA_HOME/cesarmanzocode-rice/brave' apply.sh
+check "apply.sh never writes into BraveSoftware/Brave-Browser" \
+  bash -c '
+    # Drop full-line "#" comments (this codebases own explanatory prose,
+    # which legitimately names BraveSoftware to say it is never touched)
+    # before scanning for the string as actual code.
+    for f in apply.sh install.sh uninstall.sh scripts/lib/*.sh; do
+      grep -vE "^\s*#" "$f" | grep -q "BraveSoftware" && exit 1
+    done
+    exit 0
+  '
+check "no code path touches Brave profile files (Preferences/Local State/Cookies/History/...)" \
+  bash -c '! grep -rEn "BraveSoftware/Brave-Browser/(Preferences|Local State|Bookmarks|Cookies|History|Sessions|Passwords|Extensions)\b" \
+      --include="*.sh" apply.sh install.sh uninstall.sh scripts'
+
 echo "== end-to-end: --dry-run touches nothing =="
 DRYHOME="$(mktemp -d)"
 check "dry-run --defaults" env HOME="$DRYHOME" XDG_CONFIG_HOME="$DRYHOME/.config" \
@@ -181,6 +267,8 @@ check "hyprland.lua entrypoint installed" test -f "$HOME1/.config/hypr/hyprland.
 check "hyprland.lua does NOT depend on the repo path" \
   bash -c "! grep -q '$REPO_ROOT' '$HOME1/.config/hypr/hyprland.lua'"
 check "runtime modules installed" test -f "$HOME1/.config/hypr/cesarmanzocode-rice/binds.lua"
+check "layers.lua installed (init.lua's require(\"layers\") must resolve)" \
+  test -f "$HOME1/.config/hypr/cesarmanzocode-rice/layers.lua"
 check "theme.lua installed" test -f "$HOME1/.config/hypr/cesarmanzocode-rice/theme.lua"
 check "no hyprland.conf runtime file generated" \
   bash -c "[ ! -e '$HOME1/.config/hypr/hyprland.conf' ]"
@@ -194,6 +282,13 @@ check "generic monitor rule present" \
   grep -q 'hl.monitor({ output = "", mode = "preferred", position = "auto", scale = "auto" })' \
   "$HOME1/.config/hypr/cesarmanzocode-rice/monitors.lua"
 check "waybar installed" test -f "$HOME1/.config/waybar/config.jsonc"
+check "brave theme staged under XDG_DATA_HOME (portable, not repo path)" \
+  test -f "$HOME1/.local/share/cesarmanzocode-rice/brave/monochrome/manifest.json"
+check "staged brave manifest matches the repo source" \
+  diff -q "$REPO_ROOT/themes/monochrome/brave/manifest.json" \
+    "$HOME1/.local/share/cesarmanzocode-rice/brave/monochrome/manifest.json"
+check "brave theme was NOT installed into the Brave profile" \
+  bash -c "[ ! -e '$HOME1/.config/BraveSoftware' ]"
 
 echo "== autostart: only cliphist is started from Hyprland; the rest are services =="
 check "cliphist text watcher in autostart.lua" \
@@ -220,6 +315,21 @@ check "user.lua still parses" lua -e "assert(loadfile('$HOME1/.config/cesarmanzo
 check "re-run apply.sh again" env HOME="$HOME1" XDG_CONFIG_HOME="$HOME1/.config" \
   XDG_DATA_HOME="$HOME1/.local/share" ./apply.sh
 check "custom marker survived" grep -q -- "-- kept" "$HOME1/.config/cesarmanzocode-rice/user.lua"
+
+echo "== v3: uninstall removes only the brave theme files it manages =="
+BRAVE_STAGED="$HOME1/.local/share/cesarmanzocode-rice/brave/monochrome/manifest.json"
+UNRELATED_MARKER="$HOME1/.local/share/cesarmanzocode-rice/brave/monochrome/user-added-file.txt"
+echo "not managed by this rice" > "$UNRELATED_MARKER"
+check "brave theme present before uninstall" test -f "$BRAVE_STAGED"
+check "uninstall brave component" env HOME="$HOME1" XDG_CONFIG_HOME="$HOME1/.config" \
+  XDG_DATA_HOME="$HOME1/.local/share" bash -c '
+    printf "y\nn\n" | ./uninstall.sh brave
+  '
+check "manifest-tracked brave theme file removed" bash -c "[ ! -e '$BRAVE_STAGED' ]"
+check "uninstall left an unrelated file in the same directory alone" test -f "$UNRELATED_MARKER"
+check "uninstall did not touch a Brave profile (none exists here, and none was created)" \
+  bash -c "[ ! -e '$HOME1/.config/BraveSoftware' ]"
+
 rm -rf "$HOME1"
 
 echo "== component isolation: disabled components are never touched =="

@@ -143,10 +143,80 @@ themes/<name>/rofi/colors.rasi
 themes/<name>/swaync/colors.css
 themes/<name>/kitty/colors.conf
 themes/<name>/hyprlock.conf
+themes/<name>/brave/manifest.json   # optional — see "Brave theme" below
 wallpapers/<name>.png
 ```
 
 No binds, no app choices, nothing functional belongs in a theme.
+
+## Brave theme (browser chrome, not web content)
+
+`themes/monochrome/brave/manifest.json` is a real Chromium/Brave
+**theme** — a manifest-only extension (`manifest_version: 3`, a `theme`
+key, no JavaScript, no `permissions`/`host_permissions`/`content_scripts`/
+`background`) that recolors the browser's own chrome — frame, toolbar,
+omnibox, tab strip — to match Waybar/Kitty/Rofi/SwayNC. It does **not**
+theme web pages, does not make Brave transparent (web content stays
+100% opaque; Hyprland's window opacity/blur rules never target Brave),
+and never touches anything under `~/.config/BraveSoftware/` — no
+`Preferences`, no `Local State`, no profile data of any kind, no
+enterprise policy, no third-party extension.
+
+Colors used (verified against Chromium's current
+`chrome/browser/themes/browser_theme_pack.cc` `kOverwritableColorTable` —
+every key below is live upstream, none are guessed or legacy):
+
+| Key                              | Color     | Meaning                          |
+|-----------------------------------|-----------|-----------------------------------|
+| `frame` / `frame_inactive`         | `#0B0B0B` / `#050505` | window frame, focused/unfocused |
+| `toolbar`                          | `#181818` | toolbar **and** the active tab (Chromium ties these together — there is no separate "active tab background" key; the active tab is drawn as a seamless continuation of the toolbar) |
+| `toolbar_text` / `toolbar_button_icon` | `#F4F4F4` | toolbar text/icons |
+| `omnibox_background` / `omnibox_text`  | `#101010` / `#F4F4F4` | address bar |
+| `tab_text`                          | `#FFFFFF` | active tab's text |
+| `background_tab` / `background_tab_inactive` | `#0B0B0B` / `#050505` | inactive tabs |
+| `tab_background_text(_inactive)`    | `#9A9A9A` | inactive tabs' text |
+| `bookmark_text`                     | `#F4F4F4` | bookmarks bar |
+| `ntp_background` / `ntp_header` / `ntp_link` / `ntp_text` | `#050505` / `#0B0B0B` / `#F4F4F4` / `#F4F4F4` | new-tab page — Brave largely replaces the stock NTP with its own UI (News feed, stats, background image), so most of this may simply be overridden and invisible; that's a Brave-side limitation, not a bug in this theme. |
+
+**Installed path.** `./apply.sh` stages the theme (unpacked, ready to
+load) at:
+
+```
+~/.local/share/cesarmanzocode-rice/brave/monochrome/manifest.json
+```
+
+— under `$XDG_DATA_HOME/cesarmanzocode-rice/`, the same data root this
+rice already uses for backups, so nothing depends on this git clone
+staying at a fixed path. It is tracked like any other component
+(`~/.config/cesarmanzocode-rice/manifest.d/brave.list`), so
+`./uninstall.sh brave` removes exactly that staged copy and nothing
+inside your Brave profile.
+
+**Loading it into Brave is a manual, one-time step** — Brave has no
+CLI/policy path to load an unpacked theme into a running profile
+automatically, and this rice will not manipulate the profile to fake
+one:
+
+1. Open `brave://extensions`.
+2. Enable **Developer mode** (top-right toggle).
+3. Click **Load unpacked** and select
+   `~/.local/share/cesarmanzocode-rice/brave/monochrome/`.
+4. Open `brave://settings/appearance` and check that no Brave-side
+   **color/theme variation** (e.g. a "Solarized"/preset accent, or "Use
+   system theme") is overriding it — if the picker there is set to
+   anything but "Use classic theme"/default, that setting can visually
+   stomp this custom theme. (Exact wording depends on your installed
+   Brave version — verify against your own `brave://settings/appearance`
+   rather than this description.)
+
+Optional, purely cosmetic: `brave://settings/appearance` also lets you
+hide toolbar buttons you don't use (Leo, Rewards, VPN, Wallet, Sidebar,
+Home, Cast, Share) for a cleaner bar — entirely up to you, never forced
+by this rice.
+
+Re-running `./apply.sh` after a theme color change just re-stages the
+updated `manifest.json`; Brave only re-reads it after you reload the
+extension from `brave://extensions` (or relaunch Brave).
 
 ## Local overrides (per machine)
 
@@ -251,7 +321,7 @@ hyprlang (the older, hyprlang-text config format) is deprecated. `apply.sh`
 installs a small entrypoint at that path
 ([`config/hypr/entrypoint.lua`](config/hypr/entrypoint.lua)) that just
 `require()`s the real modules — `core`, `input`, `animations`, `windows`,
-`monitors`, `binds`, `autostart` — installed alongside it under
+`layers`, `monitors`, `binds`, `autostart` — installed alongside it under
 `~/.config/hypr/cesarmanzocode-rice/`, plus the active theme
 (`theme.lua`, copied from `themes/<name>/hypr.lua`). Those modules call
 Hyprland's own `hl.config()` / `hl.bind()` / `hl.dsp.*` / `hl.monitor()` /
@@ -280,3 +350,9 @@ one.
   if you disabled those components the buttons simply no-op instead of
   being removed from the bar.
 - Automatic package installation only supports Arch/pacman.
+- The Brave theme must be loaded manually via `brave://extensions`
+  (see "Brave theme" above) — Brave has no automatable path to apply an
+  unpacked theme to a running profile, and this rice intentionally never
+  writes into `~/.config/BraveSoftware/`. Its new-tab-page colors may
+  also be partly invisible, since Brave largely replaces the stock
+  Chromium NTP with its own UI.
