@@ -112,7 +112,7 @@ if [ "${WANT[hypr]:-0}" = "1" ]; then
   if [ "$DRY_RUN" = "1" ]; then
     log "[dry-run] install $ENTRYPOINT + $RUNTIME_DIR/*.lua"
   else
-    for f in init.lua core.lua input.lua animations.lua windows.lua monitors.lua binds.lua autostart.lua; do
+    for f in init.lua core.lua input.lua animations.lua windows.lua layers.lua monitors.lua binds.lua autostart.lua; do
       atomic_install_file "$REPO_ROOT/config/hypr/$f" "$RUNTIME_DIR/$f"
       manifest_add hypr "$RUNTIME_DIR/$f"
     done
